@@ -11,8 +11,11 @@ import {
   Map,
   Tag,
   Search,
-  UserCheck
+  UserCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SidebarProps {
   activeModule: string;
@@ -20,6 +23,8 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
+  const { theme, toggleTheme } = useTheme();
+  
   const modules = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
     { id: 'campaigns', name: 'Campaigns', icon: Target },
@@ -35,10 +40,10 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
   ];
 
   return (
-    <div className="w-64 bg-slate-900 text-white h-screen flex flex-col">
-      <div className="p-6 border-b border-slate-700">
-        <h1 className="text-xl font-bold text-blue-400">CRM Pro</h1>
-        <p className="text-sm text-slate-400 mt-1">Sales & Marketing Hub</p>
+    <div className="w-64 bg-white dark:bg-[#121212] text-gray-900 dark:text-white h-screen flex flex-col border-r border-gray-200 dark:border-gray-800">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+        <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">CRM Pro</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sales & Marketing Hub</p>
       </div>
       
       <nav className="flex-1 p-4">
@@ -52,7 +57,7 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                     activeModule === module.id
                       ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727] hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   <Icon size={20} />
@@ -64,15 +69,23 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
         </ul>
       </nav>
       
-      <div className="p-4 border-t border-slate-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <User size={16} />
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <User size={16} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">John Doe</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Sales Manager</p>
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium">John Doe</p>
-            <p className="text-xs text-slate-400">Sales Manager</p>
-          </div>
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
+          >
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
         </div>
       </div>
     </div>
