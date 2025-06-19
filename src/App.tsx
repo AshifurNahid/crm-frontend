@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import TerritoryCreate from "./pages/TerritoryCreate";
 import LeadCreate from "./pages/LeadCreate";
 import OpportunityCreate from "./pages/OpportunityCreate";
+import CustomerGroupCreate from "./pages/CustomerGroupCreate";
+import CustomerCreate from "./pages/CustomerCreate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
             <Route path="/territory/create" element={<TerritoryCreate />} />
             <Route path="/lead/create" element={<LeadCreate />} />
             <Route path="/opportunity/create" element={<OpportunityCreate />} />
+            <Route path="/customer-group/create" element={<CustomerGroupCreate />} />
+            <Route path="/customer/create" element={<CustomerCreate />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
