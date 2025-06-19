@@ -38,7 +38,6 @@ const TerritoryCreate = () => {
   const onSubmit = async (data: TerritoryFormData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
       const response = await fetch('/api/v1/territories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,7 +49,6 @@ const TerritoryCreate = () => {
           title: "Success",
           description: "Territory created successfully",
         });
-        // Reset form or redirect
       } else {
         throw new Error('Failed to create territory');
       }
@@ -66,7 +64,7 @@ const TerritoryCreate = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+    <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center space-x-4 mb-6">
           <Link to="/">
@@ -78,7 +76,7 @@ const TerritoryCreate = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Territory</h1>
         </div>
 
-        <Card className="bg-white dark:bg-[#1f1f1f] border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="text-gray-900 dark:text-white">Territory Information</CardTitle>
           </CardHeader>
@@ -91,7 +89,7 @@ const TerritoryCreate = () => {
                     id="territoryName"
                     {...register('territoryName')}
                     placeholder="Enter territory name"
-                    className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                   />
                   {errors.territoryName && (
                     <p className="text-sm text-red-500">{errors.territoryName.message}</p>
@@ -101,12 +99,12 @@ const TerritoryCreate = () => {
                 <div className="space-y-2">
                   <Label className="text-gray-700 dark:text-gray-300">Territory Manager</Label>
                   <Select onValueChange={(value) => setValue('territoryManager', value)}>
-                    <SelectTrigger className="dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                       <SelectValue placeholder="Select territory manager" />
                     </SelectTrigger>
-                    <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
+                    <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                       {mockSalespersons.map((person) => (
-                        <SelectItem key={person.id} value={person.id} className="dark:text-white">
+                        <SelectItem key={person.id} value={person.id} className="text-gray-900 dark:text-white">
                           {person.name}
                         </SelectItem>
                       ))}
@@ -123,7 +121,7 @@ const TerritoryCreate = () => {
                     id="region"
                     {...register('region')}
                     placeholder="Enter region"
-                    className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                   />
                   {errors.region && (
                     <p className="text-sm text-red-500">{errors.region.message}</p>
@@ -133,12 +131,12 @@ const TerritoryCreate = () => {
                 <div className="space-y-2">
                   <Label className="text-gray-700 dark:text-gray-300">Territory Status</Label>
                   <Select onValueChange={(value) => setValue('territoryStatus', value as 'Active' | 'Inactive')}>
-                    <SelectTrigger className="dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                    <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
-                      <SelectItem value="Active" className="dark:text-white">Active</SelectItem>
-                      <SelectItem value="Inactive" className="dark:text-white">Inactive</SelectItem>
+                    <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                      <SelectItem value="Active" className="text-gray-900 dark:text-white">Active</SelectItem>
+                      <SelectItem value="Inactive" className="text-gray-900 dark:text-white">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.territoryStatus && (
