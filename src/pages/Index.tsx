@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -11,6 +10,7 @@ import OpportunityManagement from '../components/OpportunityManagement';
 import CustomerManagement from '../components/CustomerManagement';
 import CampaignManagement from '../components/CampaignManagement';
 import SalespersonManagement from '../components/SalespersonManagement';
+import ContactDirectory from '../components/ContactDirectory';
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
