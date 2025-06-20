@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import LeadManagement from '../components/LeadManagement';
 import OpportunityManagement from '../components/OpportunityManagement';
-import CustomerProfile from '../components/CustomerProfile';
+import CustomerManagement from '../components/CustomerManagement';
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -38,7 +38,7 @@ const Index = () => {
       case 'opportunities':
         return <OpportunityManagement />;
       case 'customers':
-        return <CustomerProfile />;
+        return <CustomerManagement />;
       case 'campaigns':
         return (
           <div className="space-y-6">
