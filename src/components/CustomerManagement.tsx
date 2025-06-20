@@ -143,7 +143,7 @@ const loyaltyPrograms = [
 const CustomerManagement = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('');
+  const [filterType, setFilterType] = useState('all');
   const [selectedSalesTeam, setSelectedSalesTeam] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -159,7 +159,7 @@ const CustomerManagement = () => {
   const filteredCustomers = mockCustomers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.group.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = !filterType || customer.type === filterType;
+    const matchesType = filterType === 'all' || customer.type === filterType;
     return matchesSearch && matchesType;
   });
 
@@ -444,7 +444,7 @@ const CustomerManagement = () => {
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-gray-800">
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               {customerTypes.map((type) => (
                 <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
               ))}
