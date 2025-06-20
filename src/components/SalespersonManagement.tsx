@@ -219,7 +219,7 @@ const SalespersonManagement = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-white dark:bg-gray-800">
-                              <SelectItem value="">No Manager</SelectItem>
+                              <SelectItem value="no-manager">No Manager</SelectItem>
                               {mockSalespersons
                                 .filter(sp => sp.groupNode)
                                 .map((manager) => (
