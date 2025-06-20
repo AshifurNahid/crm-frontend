@@ -79,8 +79,8 @@ type CampaignFormData = z.infer<typeof campaignSchema>;
 const CampaignManagement = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all-types');
+  const [filterStatus, setFilterStatus] = useState('all-statuses');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -97,8 +97,8 @@ const CampaignManagement = () => {
   const filteredCampaigns = mockCampaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          campaign.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || campaign.type === filterType;
-    const matchesStatus = filterStatus === 'all' || campaign.status === filterStatus;
+    const matchesType = filterType === 'all-types' || campaign.type === filterType;
+    const matchesStatus = filterStatus === 'all-statuses' || campaign.status === filterStatus;
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -375,7 +375,7 @@ const CampaignManagement = () => {
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-gray-800">
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all-types">All Types</SelectItem>
                 {campaignTypes.map((type) => (
                   <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                 ))}
@@ -386,7 +386,7 @@ const CampaignManagement = () => {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-gray-800">
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all-statuses">All Statuses</SelectItem>
                 {campaignStatuses.map((status) => (
                   <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>
                 ))}
