@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -8,6 +9,8 @@ import Dashboard from '../components/Dashboard';
 import LeadManagement from '../components/LeadManagement';
 import OpportunityManagement from '../components/OpportunityManagement';
 import CustomerManagement from '../components/CustomerManagement';
+import CampaignManagement from '../components/CampaignManagement';
+import SalespersonManagement from '../components/SalespersonManagement';
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -40,14 +43,7 @@ const Index = () => {
       case 'customers':
         return <CustomerManagement />;
       case 'campaigns':
-        return (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campaign Management</h1>
-            <div className="bg-white dark:bg-[#1f1f1f] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-300">Campaign management interface coming soon...</p>
-            </div>
-          </div>
-        );
+        return <CampaignManagement />;
       case 'territories':
         return (
           <div className="space-y-6">
@@ -139,14 +135,7 @@ const Index = () => {
           </div>
         );
       case 'salespersons':
-        return (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Salesperson Management</h1>
-            <div className="bg-white dark:bg-[#1f1f1f] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-300">Salesperson management interface coming soon...</p>
-            </div>
-          </div>
-        );
+        return <SalespersonManagement />;
       case 'contacts':
         return (
           <div className="space-y-6">
