@@ -35,7 +35,7 @@ const ContactDirectory = () => {
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
 
-  // Dummy data
+  // Extended dummy data with more contacts
   const mockContacts: Contact[] = [
     {
       id: '1',
@@ -107,6 +107,49 @@ const ContactDirectory = () => {
         { entityType: 'CUSTOMER', entityId: 'CUST003', isPrimary: true },
         { entityType: 'SUPPLIER', entityId: 'SUPP321', isPrimary: false }
       ]
+    },
+    {
+      id: '6',
+      firstName: 'Lisa',
+      lastName: 'Anderson',
+      email: 'lisa.anderson@startup.io',
+      phone: '+1-555-0987',
+      status: 'OPEN_TO_CONTACT',
+      address: '987 Startup Lane, Seattle, WA 98101',
+      designation: 'Founder & CEO',
+      department: 'Executive',
+      associations: [
+        { entityType: 'CUSTOMER', entityId: 'CUST004', isPrimary: true },
+        { entityType: 'LEAD', entityId: 'LEAD789', isPrimary: false }
+      ]
+    },
+    {
+      id: '7',
+      firstName: 'Robert',
+      lastName: 'Taylor',
+      email: 'robert.taylor@consulting.com',
+      phone: '+1-555-0654',
+      status: 'PASSIVE',
+      address: '654 Consulting Ave, Chicago, IL 60601',
+      designation: 'Senior Consultant',
+      department: 'Consulting',
+      associations: [
+        { entityType: 'SALES_PARTNER', entityId: 'PART789', isPrimary: true }
+      ]
+    },
+    {
+      id: '8',
+      firstName: 'Amanda',
+      lastName: 'Brown',
+      email: 'amanda.brown@finance.com',
+      phone: '+1-555-0432',
+      status: 'REPLIED',
+      address: '432 Finance Street, Boston, MA 02101',
+      designation: 'Financial Analyst',
+      department: 'Finance',
+      associations: [
+        { entityType: 'CUSTOMER', entityId: 'CUST005', isPrimary: true }
+      ]
     }
   ];
 
@@ -137,6 +180,21 @@ const ContactDirectory = () => {
   });
 
   const uniqueDepartments = Array.from(new Set(mockContacts.map(c => c.department).filter(Boolean)));
+
+  const handleViewContact = (contactId: string) => {
+    console.log('Viewing contact:', contactId);
+    // Add view contact logic here
+  };
+
+  const handleEditContact = (contactId: string) => {
+    console.log('Editing contact:', contactId);
+    // Add edit contact logic here
+  };
+
+  const handleDeleteContact = (contactId: string) => {
+    console.log('Deleting contact:', contactId);
+    // Add delete contact logic here
+  };
 
   return (
     <div className="space-y-6">
@@ -259,13 +317,26 @@ const ContactDirectory = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewContact(contact.id)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditContact(contact.id)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteContact(contact.id)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

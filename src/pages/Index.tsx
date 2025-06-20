@@ -11,6 +11,7 @@ import CustomerManagement from '../components/CustomerManagement';
 import CampaignManagement from '../components/CampaignManagement';
 import SalespersonManagement from '../components/SalespersonManagement';
 import ContactDirectory from '../components/ContactDirectory';
+import InventoryManagement from '../components/InventoryManagement';
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -137,23 +138,9 @@ const Index = () => {
       case 'salespersons':
         return <SalespersonManagement />;
       case 'contacts':
-        return (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Contact Directory</h1>
-            <div className="bg-white dark:bg-[#1f1f1f] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-300">Contact directory interface coming soon...</p>
-            </div>
-          </div>
-        );
+        return <ContactDirectory />;
       case 'inventory':
-        return (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inventory Management</h1>
-            <div className="bg-white dark:bg-[#1f1f1f] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-              <p className="text-gray-600 dark:text-gray-300">Inventory management interface coming soon...</p>
-            </div>
-          </div>
-        );
+        return <InventoryManagement />;
       case 'sales':
         return (
           <div className="space-y-6">
