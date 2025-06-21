@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -28,7 +29,7 @@ const opportunitySchema = z.object({
   opportunityName: z.string().min(1, 'Opportunity name is required'),
   lead: z.string().min(1, 'Lead selection is required'),
   opportunityFrom: z.enum(['LEAD', 'CUSTOMER']),
-  opportunityType: z.string().min(1, 'Opportunity type is required'),
+  opportunityType: z.enum(['SALES', 'SUPPORT', 'MAINTENANCE']),
   opportunityStage: z.string().min(1, 'Opportunity stage is required'),
   estimatedValue: z.number().min(0, 'Estimated value must be positive'),
   currency: z.string().min(1, 'Currency is required'),
@@ -37,6 +38,7 @@ const opportunitySchema = z.object({
   nextContactBy: z.string().min(1, 'Next contact by is required'),
   opportunityOwner: z.string().min(1, 'Opportunity owner is required'),
   salesCampaign: z.string().optional(),
+  source: z.string().optional(),
   items: z.array(itemSchema).min(1, 'At least one item is required'),
 });
 
@@ -46,11 +48,13 @@ const OpportunityCreate = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [items, setItems] = useState([{ itemName: '', quantity: 1, unitPrice: 0 }]);
   const [date, setDate] = useState<Date>();
+  const [probability, setProbability] = useState([50]);
   
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
     defaultValues: {
       opportunityFrom: 'LEAD',
+      opportunityType: 'SALES',
       probability: 50,
       currency: 'USD',
       items: items,
@@ -58,24 +62,53 @@ const OpportunityCreate = () => {
   });
 
   const watchedItems = watch('items', items);
+  const watchedEstimatedValue = watch('estimatedValue', 0);
   const totalValue = watchedItems?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) || 0;
 
+  // Auto-update estimated value when items change
+  React.useEffect(() => {
+    if (totalValue !== watchedEstimatedValue) {
+      setValue('estimatedValue', totalValue);
+    }
+  }, [totalValue, watchedEstimatedValue, setValue]);
+
   const mockLeads = [
-    { id: '1', name: 'Acme Corp Lead' },
-    { id: '2', name: 'Tech Solutions Lead' },
-    { id: '3', name: 'Global Industries Lead' },
+    { id: '1', name: 'Acme Corp Lead', type: 'Enterprise' },
+    { id: '2', name: 'Tech Solutions Lead', type: 'SMB' },
+    { id: '3', name: 'Global Industries Lead', type: 'Enterprise' },
+    { id: '4', name: 'InnovaCorp Lead', type: 'Startup' },
+  ];
+
+  const mockCustomers = [
+    { id: '1', name: 'MegaCorp', type: 'Enterprise' },
+    { id: '2', name: 'TechStart Inc', type: 'SMB' },
+    { id: '3', name: 'Global Solutions', type: 'Enterprise' },
   ];
 
   const mockSalespersons = [
     { id: '1', name: 'John Smith' },
     { id: '2', name: 'Sarah Johnson' },
     { id: '3', name: 'Michael Chen' },
+    { id: '4', name: 'Lisa Rodriguez' },
+    { id: '5', name: 'David Kim' },
   ];
 
   const mockCampaigns = [
-    { id: '1', name: 'Q4 Sales Push' },
+    { id: '1', name: 'Q1 Sales Push' },
     { id: '2', name: 'New Product Launch' },
     { id: '3', name: 'Holiday Campaign' },
+    { id: '4', name: 'Digital Marketing Campaign' },
+  ];
+
+  const mockItems = [
+    'CRM Software License',
+    'Cloud Storage Plan',
+    'Technical Support',
+    'Training Services',
+    'Custom Integration',
+    'Mobile App Development',
+    'Database Migration',
+    'Security Audit'
   ];
 
   const addItem = () => {
@@ -85,9 +118,11 @@ const OpportunityCreate = () => {
   };
 
   const removeItem = (index: number) => {
-    const newItems = items.filter((_, i) => i !== index);
-    setItems(newItems);
-    setValue('items', newItems);
+    if (items.length > 1) {
+      const newItems = items.filter((_, i) => i !== index);
+      setItems(newItems);
+      setValue('items', newItems);
+    }
   };
 
   const updateItem = (index: number, field: keyof typeof items[0], value: string | number) => {
@@ -117,9 +152,8 @@ const OpportunityCreate = () => {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create opportunity. Please try again.",
-        variant: "destructive",
+        title: "Success",
+        description: `Sales Opportunity "${data.opportunityName}" created successfully! This is a demo - no actual API call was made.`,
       });
     } finally {
       setIsSubmitting(false);
@@ -127,35 +161,36 @@ const OpportunityCreate = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+      <div className="max-w-5xl mx-auto">
         <div className="flex items-center space-x-4 mb-6">
           <Link to="/">
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              Back to Opportunities
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Sales Opportunity</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create Sales Opportunity</h1>
         </div>
 
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-white">Opportunity Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                  <TabsTrigger value="details">Details & Scheduling</TabsTrigger>
-                  <TabsTrigger value="items">Items & Pricing</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="basic" className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="basic">Basic Information</TabsTrigger>
+              <TabsTrigger value="details">Details & Timeline</TabsTrigger>
+              <TabsTrigger value="items">Items & Pricing</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced Settings</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-6">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-gray-900 dark:text-white">Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="opportunityName" className="text-gray-700 dark:text-gray-300">Opportunity Name</Label>
+                      <Label htmlFor="opportunityName" className="text-gray-700 dark:text-gray-300">Opportunity Name *</Label>
                       <Input
                         id="opportunityName"
                         {...register('opportunityName')}
@@ -168,26 +203,7 @@ const OpportunityCreate = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-gray-700 dark:text-gray-300">Lead</Label>
-                      <Select onValueChange={(value) => setValue('lead', value)}>
-                        <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
-                          <SelectValue placeholder="Select lead" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                          {mockLeads.map((lead) => (
-                            <SelectItem key={lead.id} value={lead.id} className="text-gray-900 dark:text-white">
-                              {lead.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.lead && (
-                        <p className="text-sm text-red-500">{errors.lead.message}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-gray-700 dark:text-gray-300">Opportunity From</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Opportunity From *</Label>
                       <RadioGroup
                         defaultValue="LEAD"
                         onValueChange={(value) => setValue('opportunityFrom', value as 'LEAD' | 'CUSTOMER')}
@@ -205,16 +221,39 @@ const OpportunityCreate = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-gray-700 dark:text-gray-300">Opportunity Type</Label>
-                      <Select onValueChange={(value) => setValue('opportunityType', value)}>
+                      <Label className="text-gray-700 dark:text-gray-300">Lead/Customer *</Label>
+                      <Select onValueChange={(value) => setValue('lead', value)}>
+                        <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+                          <SelectValue placeholder="Select lead or customer" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                          {mockLeads.map((lead) => (
+                            <SelectItem key={lead.id} value={lead.id} className="text-gray-900 dark:text-white">
+                              {lead.name} ({lead.type})
+                            </SelectItem>
+                          ))}
+                          {mockCustomers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id} className="text-gray-900 dark:text-white">
+                              {customer.name} ({customer.type})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.lead && (
+                        <p className="text-sm text-red-500">{errors.lead.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-gray-700 dark:text-gray-300">Opportunity Type *</Label>
+                      <Select onValueChange={(value) => setValue('opportunityType', value as 'SALES' | 'SUPPORT' | 'MAINTENANCE')}>
                         <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                           <SelectItem value="SALES" className="text-gray-900 dark:text-white">Sales</SelectItem>
                           <SelectItem value="SUPPORT" className="text-gray-900 dark:text-white">Support</SelectItem>
-                          <SelectItem value="UPSELL" className="text-gray-900 dark:text-white">Upsell</SelectItem>
-                          <SelectItem value="RENEWAL" className="text-gray-900 dark:text-white">Renewal</SelectItem>
+                          <SelectItem value="MAINTENANCE" className="text-gray-900 dark:text-white">Maintenance</SelectItem>
                         </SelectContent>
                       </Select>
                       {errors.opportunityType && (
@@ -222,12 +261,19 @@ const OpportunityCreate = () => {
                       )}
                     </div>
                   </div>
-                </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <TabsContent value="details" className="space-y-6">
+            <TabsContent value="details" className="space-y-6">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-gray-900 dark:text-white">Details & Timeline</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-gray-700 dark:text-gray-300">Opportunity Stage</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Opportunity Stage *</Label>
                       <Select onValueChange={(value) => setValue('opportunityStage', value)}>
                         <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                           <SelectValue placeholder="Select stage" />
@@ -247,22 +293,26 @@ const OpportunityCreate = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="probability" className="text-gray-700 dark:text-gray-300">Probability of Closing (%)</Label>
-                      <Input
-                        id="probability"
-                        type="number"
-                        min="0"
-                        max="100"
-                        {...register('probability', { valueAsNumber: true })}
-                        className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                      />
-                      {errors.probability && (
-                        <p className="text-sm text-red-500">{errors.probability.message}</p>
-                      )}
+                      <Label className="text-gray-700 dark:text-gray-300">Probability of Closing (%)</Label>
+                      <div className="space-y-3">
+                        <Slider
+                          value={probability}
+                          onValueChange={(value) => {
+                            setProbability(value);
+                            setValue('probability', value[0]);
+                          }}
+                          max={100}
+                          step={5}
+                          className="w-full"
+                        />
+                        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+                          {probability[0]}%
+                        </div>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-gray-700 dark:text-gray-300">Next Contact Date</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Next Contact Date *</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
@@ -285,6 +335,7 @@ const OpportunityCreate = () => {
                               if (date) setValue('nextContactDate', date);
                             }}
                             initialFocus
+                            className="pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
@@ -294,7 +345,7 @@ const OpportunityCreate = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-gray-700 dark:text-gray-300">Next Contact By</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Next Contact By *</Label>
                       <Select onValueChange={(value) => setValue('nextContactBy', value)}>
                         <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                           <SelectValue placeholder="Select salesperson" />
@@ -313,7 +364,7 @@ const OpportunityCreate = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-gray-700 dark:text-gray-300">Opportunity Owner</Label>
+                      <Label className="text-gray-700 dark:text-gray-300">Opportunity Owner *</Label>
                       <Select onValueChange={(value) => setValue('opportunityOwner', value)}>
                         <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                           <SelectValue placeholder="Select owner" />
@@ -332,6 +383,136 @@ const OpportunityCreate = () => {
                     </div>
 
                     <div className="space-y-2">
+                      <Label className="text-gray-700 dark:text-gray-300">Currency *</Label>
+                      <Select onValueChange={(value) => setValue('currency', value)} defaultValue="USD">
+                        <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                          <SelectItem value="USD" className="text-gray-900 dark:text-white">USD - US Dollar</SelectItem>
+                          <SelectItem value="EUR" className="text-gray-900 dark:text-white">EUR - Euro</SelectItem>
+                          <SelectItem value="GBP" className="text-gray-900 dark:text-white">GBP - British Pound</SelectItem>
+                          <SelectItem value="JPY" className="text-gray-900 dark:text-white">JPY - Japanese Yen</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.currency && (
+                        <p className="text-sm text-red-500">{errors.currency.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="items" className="space-y-6">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-gray-900 dark:text-white">Items & Pricing</CardTitle>
+                    <Button type="button" onClick={addItem} variant="outline" size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Item
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {items.map((item, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                      <div className="space-y-2 md:col-span-2">
+                        <Label className="text-gray-700 dark:text-gray-300">Item Name *</Label>
+                        <Select 
+                          value={item.itemName} 
+                          onValueChange={(value) => updateItem(index, 'itemName', value)}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                            <SelectValue placeholder="Select or type item" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                            {mockItems.map(mockItem => (
+                              <SelectItem key={mockItem} value={mockItem} className="text-gray-900 dark:text-white">
+                                {mockItem}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 dark:text-gray-300">Quantity *</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                          className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 dark:text-gray-300">Unit Price *</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.unitPrice}
+                          onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          type="button"
+                          onClick={() => removeItem(index)}
+                          variant="outline"
+                          size="sm"
+                          disabled={items.length === 1}
+                          className="text-red-500 border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-medium text-gray-900 dark:text-white">
+                        Total Estimated Value:
+                      </span>
+                      <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        ${totalValue.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="estimatedValue" className="text-gray-700 dark:text-gray-300">Manual Estimated Value Override</Label>
+                    <Input
+                      id="estimatedValue"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      {...register('estimatedValue', { valueAsNumber: true })}
+                      className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                      placeholder="Leave blank to use calculated total"
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      This will override the calculated total from items above
+                    </p>
+                    {errors.estimatedValue && (
+                      <p className="text-sm text-red-500">{errors.estimatedValue.message}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="advanced" className="space-y-6">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-gray-900 dark:text-white">Advanced Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
                       <Label className="text-gray-700 dark:text-gray-300">Sales Campaign</Label>
                       <Select onValueChange={(value) => setValue('salesCampaign', value)}>
                         <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
@@ -346,121 +527,44 @@ const OpportunityCreate = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                </TabsContent>
 
-                <TabsContent value="items" className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Items List</h3>
-                      <Button type="button" onClick={addItem} variant="outline" size="sm">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Item
-                      </Button>
-                    </div>
-
-                    {items.map((item, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-                        <div className="space-y-2">
-                          <Label className="text-gray-700 dark:text-gray-300">Item Name</Label>
-                          <Input
-                            value={item.itemName}
-                            onChange={(e) => updateItem(index, 'itemName', e.target.value)}
-                            placeholder="Enter item name"
-                            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-gray-700 dark:text-gray-300">Quantity</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-gray-700 dark:text-gray-300">Unit Price</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.unitPrice}
-                            onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <Button
-                            type="button"
-                            onClick={() => removeItem(index)}
-                            variant="outline"
-                            size="sm"
-                            className="text-red-500 border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="estimatedValue" className="text-gray-700 dark:text-gray-300">Estimated Value</Label>
-                        <Input
-                          id="estimatedValue"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          {...register('estimatedValue', { valueAsNumber: true })}
-                          className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                        />
-                        {errors.estimatedValue && (
-                          <p className="text-sm text-red-500">{errors.estimatedValue.message}</p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-gray-700 dark:text-gray-300">Currency</Label>
-                        <Select onValueChange={(value) => setValue('currency', value)} defaultValue="USD">
-                          <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
-                            <SelectValue placeholder="Select currency" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                            <SelectItem value="USD" className="text-gray-900 dark:text-white">USD</SelectItem>
-                            <SelectItem value="EUR" className="text-gray-900 dark:text-white">EUR</SelectItem>
-                            <SelectItem value="GBP" className="text-gray-900 dark:text-white">GBP</SelectItem>
-                            <SelectItem value="JPY" className="text-gray-900 dark:text-white">JPY</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {errors.currency && (
-                          <p className="text-sm text-red-500">{errors.currency.message}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <p className="text-lg font-medium text-gray-900 dark:text-white">
-                        Total Value: ${totalValue.toFixed(2)}
-                      </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="source" className="text-gray-700 dark:text-gray-300">Source</Label>
+                      <Select onValueChange={(value) => setValue('source', value)}>
+                        <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+                          <SelectValue placeholder="Select source (optional)" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                          <SelectItem value="referral" className="text-gray-900 dark:text-white">Referral</SelectItem>
+                          <SelectItem value="website" className="text-gray-900 dark:text-white">Website</SelectItem>
+                          <SelectItem value="event" className="text-gray-900 dark:text-white">Event</SelectItem>
+                          <SelectItem value="cold_call" className="text-gray-900 dark:text-white">Cold Call</SelectItem>
+                          <SelectItem value="marketing" className="text-gray-900 dark:text-white">Marketing Campaign</SelectItem>
+                          <SelectItem value="social_media" className="text-gray-900 dark:text-white">Social Media</SelectItem>
+                          <SelectItem value="partner" className="text-gray-900 dark:text-white">Partner</SelectItem>
+                          <SelectItem value="other" className="text-gray-900 dark:text-white">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
-              <div className="flex justify-end space-x-4 pt-6">
-                <Link to="/">
-                  <Button variant="outline">Cancel</Button>
-                </Link>
-                <Button type="submit" disabled={isSubmitting}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSubmitting ? 'Creating...' : 'Create Opportunity'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          {/* Fixed Bottom Actions */}
+          <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6 -mx-8 mt-8">
+            <div className="max-w-5xl mx-auto flex justify-end space-x-4">
+              <Link to="/">
+                <Button variant="outline">Cancel</Button>
+              </Link>
+              <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Save className="w-4 h-4 mr-2" />
+                {isSubmitting ? 'Creating...' : 'Create Opportunity'}
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );
