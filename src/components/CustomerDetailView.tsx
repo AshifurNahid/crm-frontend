@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X, Building, Globe, CreditCard, Calendar, Users, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -29,8 +28,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, onClo
   const navigate = useNavigate();
 
   const handleEdit = () => {
-    // Navigate to customer edit page - using customer create page as edit placeholder
-    navigate(`/customer/create?edit=${customer.id}`);
+    navigate(`/customers/${customer.id}/edit`);
   };
 
   return (
