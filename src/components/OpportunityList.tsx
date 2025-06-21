@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Eye, Edit, Trash2, Filter, Calendar, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,9 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import OpportunityDetailView from './OpportunityDetailView';
+import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 
 interface Opportunity {
   id: string;
@@ -36,9 +38,14 @@ const OpportunityList = () => {
   const [customerFilter, setCustomerFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [opportunityToDelete, setOpportunityToDelete] = useState<Opportunity | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Mock data
-  const [opportunities] = useState<Opportunity[]>([
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([
     {
       id: '1',
       opportunityName: 'Enterprise CRM Solution',
@@ -133,11 +140,51 @@ const OpportunityList = () => {
     return matchesSearch && matchesStage && matchesOwner && matchesCustomer;
   });
 
-  const handleDelete = (id: string) => {
+  const handleView = (opportunity: Opportunity) => {
+    setSelectedOpportunity(opportunity);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEdit = (id: string) => {
+    console.log('Editing opportunity:', id);
     toast({
-      title: "Opportunity Deleted",
-      description: "The opportunity has been successfully deleted.",
+      title: "Edit Opportunity",
+      description: "Redirecting to edit form...",
     });
+    // Here you would typically navigate to edit form or open edit modal
+  };
+
+  const handleDeleteClick = (opportunity: Opportunity) => {
+    setOpportunityToDelete(opportunity);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!opportunityToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setOpportunities(prev => prev.filter(opp => opp.id !== opportunityToDelete.id));
+      
+      toast({
+        title: "Opportunity Deleted",
+        description: `"${opportunityToDelete.opportunityName}" has been successfully deleted.`,
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setOpportunityToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete opportunity. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const uniqueOwners = [...new Set(opportunities.map(opp => opp.opportunityOwner))];
@@ -323,16 +370,26 @@ const OpportunityList = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleView(opportunity)}
+                        className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleEdit(opportunity.id)}
+                        className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => handleDelete(opportunity.id)}
+                        onClick={() => handleDeleteClick(opportunity)}
                         className="text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -353,6 +410,30 @@ const OpportunityList = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedOpportunity && (
+            <OpportunityDetailView
+              opportunity={selectedOpportunity}
+              onClose={() => setIsViewDialogOpen(false)}
+              onEdit={handleEdit}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Opportunity"
+        description="Are you sure you want to delete this opportunity? This will permanently remove all associated data."
+        itemName={opportunityToDelete?.opportunityName}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };

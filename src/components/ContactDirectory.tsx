@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 import AddContactForm from './AddContactForm';
+import ContactDetailView from './ContactDetailView';
+import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 
 type ContactStatus = 'OPEN_TO_CONTACT' | 'REPLIED' | 'PASSIVE';
 
@@ -34,9 +36,14 @@ const ContactDirectory = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Extended dummy data with more contacts
-  const mockContacts: Contact[] = [
+  const [mockContacts, setMockContacts] = useState<Contact[]>([
     {
       id: '1',
       firstName: 'John',
@@ -151,7 +158,7 @@ const ContactDirectory = () => {
         { entityType: 'CUSTOMER', entityId: 'CUST005', isPrimary: true }
       ]
     }
-  ];
+  ]);
 
   const getStatusBadgeVariant = (status: ContactStatus) => {
     switch (status) {
@@ -181,19 +188,51 @@ const ContactDirectory = () => {
 
   const uniqueDepartments = Array.from(new Set(mockContacts.map(c => c.department).filter(Boolean)));
 
-  const handleViewContact = (contactId: string) => {
-    console.log('Viewing contact:', contactId);
-    // Add view contact logic here
+  const handleViewContact = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsViewDialogOpen(true);
   };
 
   const handleEditContact = (contactId: string) => {
     console.log('Editing contact:', contactId);
-    // Add edit contact logic here
+    toast({
+      title: "Edit Contact",
+      description: "Redirecting to edit form...",
+    });
+    // Here you would typically navigate to edit form or open edit modal
   };
 
-  const handleDeleteContact = (contactId: string) => {
-    console.log('Deleting contact:', contactId);
-    // Add delete contact logic here
+  const handleDeleteClick = (contact: Contact) => {
+    setContactToDelete(contact);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!contactToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setMockContacts(prev => prev.filter(contact => contact.id !== contactToDelete.id));
+      
+      toast({
+        title: "Contact Deleted",
+        description: `"${contactToDelete.firstName} ${contactToDelete.lastName}" has been successfully deleted.`,
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setContactToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete contact. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -320,7 +359,7 @@ const ContactDirectory = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleViewContact(contact.id)}
+                          onClick={() => handleViewContact(contact)}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -335,7 +374,7 @@ const ContactDirectory = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-red-600 hover:text-red-700"
-                          onClick={() => handleDeleteContact(contact.id)}
+                          onClick={() => handleDeleteClick(contact)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -353,6 +392,30 @@ const ContactDirectory = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedContact && (
+            <ContactDetailView
+              contact={selectedContact}
+              onClose={() => setIsViewDialogOpen(false)}
+              onEdit={handleEditContact}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Contact"
+        description="Are you sure you want to delete this contact? This will permanently remove all associated data."
+        itemName={contactToDelete ? `${contactToDelete.firstName} ${contactToDelete.lastName}` : undefined}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };

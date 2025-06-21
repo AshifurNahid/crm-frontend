@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Filter, Edit, Eye, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,8 @@ import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import CustomerDetailView from './CustomerDetailView';
+import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 
 // Customer form schema
 const customerSchema = z.object({
@@ -31,8 +32,20 @@ const customerSchema = z.object({
 
 type CustomerFormData = z.infer<typeof customerSchema>;
 
+interface Customer {
+  id: string;
+  name: string;
+  type: string;
+  group: string;
+  territory: string;
+  currency: string;
+  creditLimit: number;
+  status: string;
+  lastContact: string;
+}
+
 // Mock data for existing customers
-const mockCustomers = [
+const mockCustomersData = [
   {
     id: '1',
     name: 'ABC Corporation',
@@ -146,6 +159,12 @@ const CustomerManagement = () => {
   const [filterType, setFilterType] = useState('all');
   const [selectedSalesTeam, setSelectedSalesTeam] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mockCustomers, setMockCustomers] = useState<Customer[]>(mockCustomersData);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -209,6 +228,53 @@ const CustomerManagement = () => {
     reset();
     setSelectedSalesTeam([]);
     setIsFormOpen(false);
+  };
+
+  const handleViewCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditCustomer = (customerId: string) => {
+    console.log('Editing customer:', customerId);
+    toast({
+      title: "Edit Customer",
+      description: "Redirecting to edit form...",
+    });
+    // Here you would typically navigate to edit form or open edit modal
+  };
+
+  const handleDeleteClick = (customer: Customer) => {
+    setCustomerToDelete(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!customerToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setMockCustomers(prev => prev.filter(customer => customer.id !== customerToDelete.id));
+      
+      toast({
+        title: "Customer Deleted",
+        description: `"${customerToDelete.name}" has been successfully deleted.`,
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setCustomerToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete customer. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -509,13 +575,26 @@ const CustomerManagement = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleViewCustomer(customer)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEditCustomer(customer.id)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteClick(customer)}
+                        >
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </div>
@@ -527,6 +606,30 @@ const CustomerManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedCustomer && (
+            <CustomerDetailView
+              customer={selectedCustomer}
+              onClose={() => setIsViewDialogOpen(false)}
+              onEdit={handleEditCustomer}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Customer"
+        description="Are you sure you want to delete this customer? This will permanently remove all associated data."
+        itemName={customerToDelete?.name}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
