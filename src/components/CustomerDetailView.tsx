@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { X, Building, Globe, CreditCard, Calendar, Users, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,13 @@ interface CustomerDetailViewProps {
 }
 
 const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, onClose, onEdit }) => {
+  const navigate = useNavigate();
+
+  const handleEdit = () => {
+    // Navigate to customer edit page - using customer create page as edit placeholder
+    navigate(`/customer/create?edit=${customer.id}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -102,7 +110,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customer, onClo
 
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={onClose}>Close</Button>
-            <Button onClick={() => onEdit(customer.id)}>
+            <Button onClick={handleEdit}>
               <Edit className="w-4 h-4 mr-2" />
               Edit Customer
             </Button>

@@ -1,31 +1,40 @@
-
 import React from 'react';
-import { X, Calendar, DollarSign, User, Building, Target, Phone, Mail } from 'lucide-react';
+import { X, DollarSign, Calendar, User, Building, TrendingUp, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
+interface Opportunity {
+  id: string;
+  opportunityName: string;
+  from: 'LEAD' | 'CUSTOMER';
+  type: 'SALES' | 'SUPPORT' | 'MAINTENANCE';
+  stage: 'PROSPECTING' | 'QUALIFICATION' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
+  estimatedValue: number;
+  currency: string;
+  probability: number;
+  opportunityOwner: string;
+  createdAt: string;
+  nextContactDate: string;
+  customer: string;
+}
+
 interface OpportunityDetailViewProps {
-  opportunity: {
-    id: string;
-    opportunityName: string;
-    from: 'LEAD' | 'CUSTOMER';
-    type: 'SALES' | 'SUPPORT' | 'MAINTENANCE';
-    stage: 'PROSPECTING' | 'QUALIFICATION' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
-    estimatedValue: number;
-    currency: string;
-    probability: number;
-    opportunityOwner: string;
-    createdAt: string;
-    nextContactDate: string;
-    customer: string;
-  };
+  opportunity: Opportunity;
   onClose: () => void;
   onEdit: (id: string) => void;
 }
 
 const OpportunityDetailView: React.FC<OpportunityDetailViewProps> = ({ opportunity, onClose, onEdit }) => {
+  const navigate = useNavigate();
+
+  const handleEdit = () => {
+    // Navigate to edit page - for now using opportunity create page as edit placeholder
+    navigate(`/opportunity/create?edit=${opportunity.id}`);
+  };
+
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'PROSPECTING': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
@@ -51,9 +60,14 @@ const OpportunityDetailView: React.FC<OpportunityDetailViewProps> = ({ opportuni
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-gray-900 dark:text-white">{opportunity.opportunityName}</CardTitle>
-            <Badge className={getStageColor(opportunity.stage)}>
-              {opportunity.stage.replace('_', ' ')}
-            </Badge>
+            <div className="flex space-x-2">
+              <Badge className={getStageColor(opportunity.stage)}>
+                {opportunity.stage.replace('_', ' ')}
+              </Badge>
+              <Badge variant="outline" className="text-gray-700 dark:text-gray-300">
+                {opportunity.from}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -70,18 +84,16 @@ const OpportunityDetailView: React.FC<OpportunityDetailViewProps> = ({ opportuni
               <div className="flex items-center space-x-3">
                 <User className="w-5 h-5 text-gray-500" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Owner</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Opportunity Owner</p>
                   <p className="font-medium text-gray-900 dark:text-white">{opportunity.opportunityOwner}</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3">
-                <Target className="w-5 h-5 text-gray-500" />
+                <Calendar className="w-5 h-5 text-gray-500" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Source</p>
-                  <Badge variant="outline" className="text-gray-700 dark:text-gray-300">
-                    {opportunity.from}
-                  </Badge>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Next Contact Date</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{opportunity.nextContactDate}</p>
                 </div>
               </div>
             </div>
@@ -91,26 +103,24 @@ const OpportunityDetailView: React.FC<OpportunityDetailViewProps> = ({ opportuni
                 <DollarSign className="w-5 h-5 text-gray-500" />
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Estimated Value</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
                     {opportunity.estimatedValue.toLocaleString()} {opportunity.currency}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3">
-                <Target className="w-5 h-5 text-gray-500" />
+                <TrendingUp className="w-5 h-5 text-gray-500" />
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Probability</p>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">{opportunity.probability}%</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{opportunity.probability}%</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Next Contact</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{opportunity.nextContactDate}</p>
-                </div>
+                <Badge variant="outline" className="text-gray-700 dark:text-gray-300">
+                  {opportunity.type}
+                </Badge>
               </div>
             </div>
           </div>
@@ -119,7 +129,10 @@ const OpportunityDetailView: React.FC<OpportunityDetailViewProps> = ({ opportuni
 
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={onClose}>Close</Button>
-            <Button onClick={() => onEdit(opportunity.id)}>Edit Opportunity</Button>
+            <Button onClick={handleEdit}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Opportunity
+            </Button>
           </div>
         </CardContent>
       </Card>

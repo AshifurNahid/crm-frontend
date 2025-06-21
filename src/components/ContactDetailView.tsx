@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { X, Mail, Phone, MapPin, Building, User, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +33,13 @@ interface ContactDetailViewProps {
 }
 
 const ContactDetailView: React.FC<ContactDetailViewProps> = ({ contact, onClose, onEdit }) => {
+  const navigate = useNavigate();
+
+  const handleEdit = () => {
+    // Navigate to contact edit page - using a generic route for now
+    navigate(`/contact/edit/${contact.id}`);
+  };
+
   const getStatusBadgeVariant = (status: ContactStatus) => {
     switch (status) {
       case 'OPEN_TO_CONTACT':
@@ -150,7 +158,7 @@ const ContactDetailView: React.FC<ContactDetailViewProps> = ({ contact, onClose,
 
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={onClose}>Close</Button>
-            <Button onClick={() => onEdit(contact.id)}>
+            <Button onClick={handleEdit}>
               <Edit className="w-4 h-4 mr-2" />
               Edit Contact
             </Button>

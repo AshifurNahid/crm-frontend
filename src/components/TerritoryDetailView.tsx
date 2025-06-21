@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { X, MapPin, User, Building, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,13 @@ interface TerritoryDetailViewProps {
 }
 
 const TerritoryDetailView: React.FC<TerritoryDetailViewProps> = ({ territory, onClose, onEdit }) => {
+  const navigate = useNavigate();
+
+  const handleEdit = () => {
+    // Navigate to territory edit page - using territory create page as edit placeholder
+    navigate(`/territory/create?edit=${territory.id}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -83,7 +91,7 @@ const TerritoryDetailView: React.FC<TerritoryDetailViewProps> = ({ territory, on
 
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={onClose}>Close</Button>
-            <Button onClick={() => onEdit(territory.id)}>
+            <Button onClick={handleEdit}>
               <Edit className="w-4 h-4 mr-2" />
               Edit Territory
             </Button>
