@@ -9,6 +9,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
 import TerritoryCreate from "./pages/TerritoryCreate";
 import LeadCreate from "./pages/LeadCreate";
+import LeadEdit from "./pages/LeadEdit";
 import OpportunityCreate from "./pages/OpportunityCreate";
 import CustomerGroupCreate from "./pages/CustomerGroupCreate";
 import CustomerCreate from "./pages/CustomerCreate";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/territory/create" element={<TerritoryCreate />} />
             <Route path="/lead/create" element={<LeadCreate />} />
+            <Route path="/leads/:id/edit" element={<LeadEdit />} />
             <Route path="/opportunity/create" element={<OpportunityCreate />} />
             <Route path="/opportunities/:id/edit" element={<OpportunityCreate />} />
             <Route path="/customer-group/create" element={<CustomerGroupCreate />} />
