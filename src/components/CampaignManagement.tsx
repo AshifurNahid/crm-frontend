@@ -24,6 +24,7 @@ const campaignTypes = [
   { id: 'Event', name: 'Event' }
 ];
 
+
 const campaignStatuses = [
   { id: 'ACTIVE', name: 'ACTIVE' },
   { id: 'Completed', name: 'Completed' },
@@ -39,7 +40,7 @@ const campaignSchema = z.object({
     required_error: 'Start date is required',
   }),
   endDate: z.date({
-    required_error: 'End date is required',
+    required_error: 'End Date is required',
   }),
 });
 
