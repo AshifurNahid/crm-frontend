@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,46 +16,16 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-
-// Mock data for campaigns
-const mockCampaigns = [
-  {
-    id: 1,
-    name: 'Summer Product Launch',
-    description: 'Launch campaign for new summer product line',
-    type: 'Email',
-    status: 'Active',
-    startDate: '2024-06-01',
-    endDate: '2024-08-31'
-  },
-  {
-    id: 2,
-    name: 'Customer Retention Drive',
-    description: 'Social media campaign to improve customer retention',
-    type: 'Social Media',
-    status: 'Planned',
-    startDate: '2024-07-15',
-    endDate: '2024-09-15'
-  },
-  {
-    id: 3,
-    name: 'Trade Show Expo 2024',
-    description: 'Annual trade show participation and promotion',
-    type: 'Event',
-    status: 'Completed',
-    startDate: '2024-05-01',
-    endDate: '2024-05-03'
-  }
-];
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const campaignTypes = [
-  { id: 'Email', name: 'Email' },
+  { id: 'EMAIL', name: 'EMAIL' },
   { id: 'Social Media', name: 'Social Media' },
   { id: 'Event', name: 'Event' }
 ];
 
 const campaignStatuses = [
-  { id: 'Active', name: 'Active' },
+  { id: 'ACTIVE', name: 'ACTIVE' },
   { id: 'Completed', name: 'Completed' },
   { id: 'Planned', name: 'Planned' }
 ];
@@ -76,6 +45,175 @@ const campaignSchema = z.object({
 
 type CampaignFormData = z.infer<typeof campaignSchema>;
 
+const fetchCampaigns = async () => {
+  const response = await fetch('http://localhost:8082/api/v1/campaigns');
+  if (!response.ok) {
+    throw new Error('Failed to fetch campaigns');
+  }
+  return response.json();
+};
+
+// Add CampaignEditDialog component for editing
+const CampaignEditDialog = ({ open, onOpenChange, campaign, onSuccess }) => {
+  const { toast } = useToast();
+  const form = useForm<CampaignFormData>({
+    resolver: zodResolver(campaignSchema),
+    defaultValues: {
+      name: campaign?.name || '',
+      description: campaign?.description || '',
+      type: campaign?.type || '',
+      status: campaign?.status || '',
+      startDate: campaign?.startDate ? new Date(campaign.startDate) : undefined,
+      endDate: campaign?.endDate ? new Date(campaign.endDate) : undefined,
+    },
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleEdit = async (data: CampaignFormData) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`http://localhost:8082/api/v1/campaigns/${campaign.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          startDate: data.startDate.toISOString().split('T')[0],
+          endDate: data.endDate.toISOString().split('T')[0],
+        }),
+      });
+      if (response.ok) {
+        toast({ title: 'Success', description: 'Campaign updated successfully!' });
+        onSuccess();
+        onOpenChange(false);
+      } else {
+        throw new Error('Failed to update campaign');
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update campaign.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Campaign</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleEdit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Campaign Name *</FormLabel>
+                  <FormControl><Input placeholder="Enter campaign name" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="type" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Campaign Type *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select campaign type" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-white dark:bg-gray-800">
+                      {campaignTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description *</FormLabel>
+                <FormControl><Textarea placeholder="Enter campaign description" className="min-h-[100px]" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField control={form.control} name="startDate" render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Start Date *</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={date => date < new Date("1900-01-01")}/>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="endDate" render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>End Date *</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={date => date < new Date("1900-01-01")}/>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="status" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="bg-white dark:bg-gray-800">
+                    {campaignStatuses.map((status) => (
+                      <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => form.reset()}>Reset</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Changes'}</Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const CampaignViewDialog = ({ open, onOpenChange, campaign }) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Campaign Details</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-2">
+        <div><b>Name:</b> {campaign.name}</div>
+        <div><b>Description:</b> {campaign.description}</div>
+        <div><b>Type:</b> {campaign.type}</div>
+        <div><b>Status:</b> {campaign.status}</div>
+        <div><b>Start Date:</b> {new Date(campaign.startDate).toLocaleDateString()}</div>
+        <div><b>End Date:</b> {new Date(campaign.endDate).toLocaleDateString()}</div>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
+
 const CampaignManagement = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,6 +221,9 @@ const CampaignManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all-statuses');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [viewCampaign, setViewCampaign] = useState(null);
+  const [editCampaign, setEditCampaign] = useState(null);
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
@@ -94,7 +235,15 @@ const CampaignManagement = () => {
     },
   });
 
-  const filteredCampaigns = mockCampaigns.filter(campaign => {
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['campaigns'],
+    queryFn: fetchCampaigns,
+  });
+
+  // Use fetched campaigns or empty array if not loaded
+  const campaigns = data?.content || [];
+
+  const filteredCampaigns = campaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          campaign.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all-types' || campaign.type === filterType;
@@ -108,7 +257,7 @@ const CampaignManagement = () => {
     
     try {
       // Simulate API call to /api/v1/campaigns
-      const response = await fetch('/api/v1/campaigns', {
+      const response = await fetch('http://localhost:8082/api/v1/campaigns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,6 +308,22 @@ const CampaignManagement = () => {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const response = await fetch(`http://localhost:8082/api/v1/campaigns/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete campaign');
+      return true;
+    },
+    onSuccess: () => {
+      toast({ title: 'Deleted', description: 'Campaign deleted.' });
+      queryClient.invalidateQueries(['campaigns']);
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to delete campaign.', variant: 'destructive' });
+    },
+  });
 
   return (
     <div className="space-y-6 p-6">
@@ -395,46 +560,68 @@ const CampaignManagement = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Campaign Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCampaigns.map((campaign) => (
-                  <TableRow key={campaign.id}>
-                    <TableCell className="font-medium">
-                      <div>
-                        <div className="font-semibold">{campaign.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {campaign.description}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{campaign.type}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(campaign.status)}`}>
-                        {campaign.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{new Date(campaign.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(campaign.endDate).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))}
-                {filteredCampaigns.length === 0 && (
+            {isLoading ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading campaigns...</div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-500 dark:text-red-400">Error loading campaigns: {error.message}</div>
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                      No campaigns found matching your criteria.
-                    </TableCell>
+                    <TableHead>Campaign Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredCampaigns.map((campaign) => (
+                    <TableRow key={campaign.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div className="font-semibold">{campaign.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {campaign.description}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{campaign.type}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(campaign.status)}`}>
+                          {campaign.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>{new Date(campaign.startDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(campaign.endDate).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setViewCampaign(campaign)}>View</Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditCampaign(campaign)}>Edit</Button>
+                          <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(campaign.id)} disabled={deleteMutation.isLoading}>Delete</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredCampaigns.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        No campaigns found matching your criteria.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+            {/* View Dialog */}
+            {viewCampaign && (
+              <CampaignViewDialog open={!!viewCampaign} onOpenChange={() => setViewCampaign(null)} campaign={viewCampaign} />
+            )}
+            {/* Edit Dialog */}
+            {editCampaign && (
+              <CampaignEditDialog open={!!editCampaign} onOpenChange={() => setEditCampaign(null)} campaign={editCampaign} onSuccess={() => queryClient.invalidateQueries(['campaigns'])} />
+            )}
           </div>
         </CardContent>
       </Card>

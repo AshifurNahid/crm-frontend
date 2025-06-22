@@ -12,10 +12,6 @@ import LeadCreate from "./pages/LeadCreate";
 import OpportunityCreate from "./pages/OpportunityCreate";
 import CustomerGroupCreate from "./pages/CustomerGroupCreate";
 import CustomerCreate from "./pages/CustomerCreate";
-import CustomerEdit from "./pages/CustomerEdit";
-import ContactEdit from "./pages/ContactEdit";
-import CustomerProfileEdit from "./pages/CustomerProfileEdit";
-import InventoryEdit from "./pages/InventoryEdit";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -39,13 +35,8 @@ const App = () => (
             <Route path="/territory/create" element={<TerritoryCreate />} />
             <Route path="/lead/create" element={<LeadCreate />} />
             <Route path="/opportunity/create" element={<OpportunityCreate />} />
-            <Route path="/opportunities/:id/edit" element={<OpportunityCreate />} />
             <Route path="/customer-group/create" element={<CustomerGroupCreate />} />
             <Route path="/customer/create" element={<CustomerCreate />} />
-            <Route path="/customers/:id/edit" element={<CustomerEdit />} />
-            <Route path="/contacts/:id/edit" element={<ContactEdit />} />
-            <Route path="/customer-profile/:id/edit" element={<CustomerProfileEdit />} />
-            <Route path="/inventory/:id/edit" element={<InventoryEdit />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
