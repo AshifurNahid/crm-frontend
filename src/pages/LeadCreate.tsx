@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,7 +29,7 @@ type LeadFormData = z.infer<typeof leadSchema>;
 const LeadCreate = () => {
   const navigate = useNavigate();
   const createMutation = useCreateLead();
-  const [leadRating, set​LeadRating] = useState([50]);
+  const [leadRating, setLeadRating] = useState([50]);
   
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<LeadFormData>({
     resolver: zodResolver(leadSchema),
@@ -213,7 +214,7 @@ const LeadCreate = () => {
                   <Slider
                     value={leadRating}
                     onValueChange={(value) => {
-                      set​LeadRating(value);
+                      setLeadRating(value);
                       setValue('leadRating', value[0]);
                     }}
                     max={100}
