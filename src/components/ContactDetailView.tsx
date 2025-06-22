@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { X, Mail, Phone, Building, User, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -8,12 +9,19 @@ import { Separator } from '@/components/ui/separator';
 
 interface Contact {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  phone: string;
-  company: string;
-  position: string;
-  status: string;
+  phone?: string;
+  status: 'OPEN_TO_CONTACT' | 'REPLIED' | 'PASSIVE';
+  address?: string;
+  designation?: string;
+  department?: string;
+  associations: Array<{
+    entityType: 'CUSTOMER' | 'SUPPLIER' | 'LEAD' | 'SALES_PARTNER';
+    entityId: string;
+    isPrimary: boolean;
+  }>;
 }
 
 interface ContactDetailViewProps {
@@ -41,7 +49,9 @@ const ContactDetailView: React.FC<ContactDetailViewProps> = ({ contact, onClose,
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl text-gray-900 dark:text-white">{contact.name}</CardTitle>
+            <CardTitle className="text-xl text-gray-900 dark:text-white">
+              {contact.firstName} {contact.lastName}
+            </CardTitle>
             <Badge 
               variant={contact.status === 'OPEN_TO_CONTACT' ? 'default' : 'secondary'}
               className={contact.status === 'OPEN_TO_CONTACT' 
@@ -64,33 +74,59 @@ const ContactDetailView: React.FC<ContactDetailViewProps> = ({ contact, onClose,
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{contact.phone}</p>
+              {contact.phone && (
+                <div className="flex items-center space-x-3">
+                  <Phone className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{contact.phone}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Building className="w-5 h-5 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Company</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{contact.company}</p>
+              {contact.department && (
+                <div className="flex items-center space-x-3">
+                  <Building className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Department</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{contact.department}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Position</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{contact.position}</p>
+              {contact.designation && (
+                <div className="flex items-center space-x-3">
+                  <User className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Designation</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{contact.designation}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
+
+          {contact.address && (
+            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Address</p>
+              <p className="font-medium text-gray-900 dark:text-white">{contact.address}</p>
+            </div>
+          )}
+
+          {contact.associations.length > 0 && (
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Associations</p>
+              <div className="flex flex-wrap gap-2">
+                {contact.associations.map((assoc, idx) => (
+                  <Badge key={idx} variant="outline" className="text-xs">
+                    {assoc.entityType} {assoc.isPrimary && '(Primary)'}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Separator />
 
