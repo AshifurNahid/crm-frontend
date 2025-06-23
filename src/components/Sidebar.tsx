@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
   Users, 
@@ -24,11 +25,13 @@ interface SidebarProps {
 
 const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
   
   const modules = [
-    { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
+    { id: 'dashboard', name: 'Dashboard', icon: BarChart3, route: '/' },
     { id: 'campaigns', name: 'Campaigns', icon: Target },
-    { id: 'territories', name: 'Territories', icon: Map },
+    { id: 'territories', name: 'Territories', icon: Map, route: '/territories' },
     { id: 'customer-groups', name: 'Customer Groups', icon: Tag },
     { id: 'leads', name: 'Lead Management', icon: Search },
     { id: 'opportunities', name: 'Opportunities', icon: TrendingUp },
@@ -38,6 +41,25 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
     { id: 'inventory', name: 'Inventory', icon: Package },
     { id: 'sales', name: 'Sales Management', icon: User },
   ];
+
+  const handleModuleClick = (module: any) => {
+    if (module.route) {
+      navigate(module.route);
+    } else {
+      // For modules without dedicated routes, stay on current page and change module
+      if (location.pathname === '/') {
+        onModuleChange(module.id);
+      } else {
+        navigate('/');
+        setTimeout(() => onModuleChange(module.id), 100);
+      }
+    }
+  };
+
+  const getActiveModule = () => {
+    if (location.pathname === '/territories') return 'territories';
+    return activeModule;
+  };
 
   return (
     <div className="w-64 bg-white dark:bg-[#121212] text-gray-900 dark:text-white h-screen flex flex-col border-r border-gray-200 dark:border-gray-800">
@@ -50,12 +72,13 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
         <ul className="space-y-2">
           {modules.map((module) => {
             const Icon = module.icon;
+            const isActive = getActiveModule() === module.id;
             return (
               <li key={module.id}>
                 <button
-                  onClick={() => onModuleChange(module.id)}
+                  onClick={() => handleModuleClick(module)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeModule === module.id
+                    isActive
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727] hover:text-gray-900 dark:hover:text-white'
                   }`}
