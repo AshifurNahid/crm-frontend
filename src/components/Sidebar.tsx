@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
   Users, 
@@ -24,20 +25,36 @@ interface SidebarProps {
 
 const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
   
   const modules = [
-    { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
-    { id: 'campaigns', name: 'Campaigns', icon: Target },
-    { id: 'territories', name: 'Territories', icon: Map },
-    { id: 'customer-groups', name: 'Customer Groups', icon: Tag },
-    { id: 'leads', name: 'Lead Management', icon: Search },
-    { id: 'opportunities', name: 'Opportunities', icon: TrendingUp },
-    { id: 'customers', name: 'Customer Profile', icon: Users },
-    { id: 'salespersons', name: 'Salespersons', icon: UserCheck },
-    { id: 'contacts', name: 'Contact Directory', icon: Phone },
-    { id: 'inventory', name: 'Inventory', icon: Package },
-    { id: 'sales', name: 'Sales Management', icon: User },
+    { id: 'dashboard', name: 'Dashboard', icon: BarChart3, path: '/' },
+    { id: 'campaigns', name: 'Campaigns', icon: Target, path: null },
+    { id: 'territories', name: 'Territories', icon: Map, path: '/territories' },
+    { id: 'customer-groups', name: 'Customer Groups', icon: Tag, path: null },
+    { id: 'leads', name: 'Lead Management', icon: Search, path: null },
+    { id: 'opportunities', name: 'Opportunities', icon: TrendingUp, path: null },
+    { id: 'customers', name: 'Customer Profile', icon: Users, path: null },
+    { id: 'salespersons', name: 'Salespersons', icon: UserCheck, path: null },
+    { id: 'contacts', name: 'Contact Directory', icon: Phone, path: null },
+    { id: 'inventory', name: 'Inventory', icon: Package, path: null },
+    { id: 'sales', name: 'Sales Management', icon: User, path: null },
   ];
+
+  const handleModuleClick = (module: any) => {
+    if (module.path) {
+      // Don't call onModuleChange for routes that have dedicated pages
+      return;
+    }
+    onModuleChange(module.id);
+  };
+
+  const isModuleActive = (module: any) => {
+    if (module.path) {
+      return location.pathname === module.path;
+    }
+    return activeModule === module.id;
+  };
 
   return (
     <div className="w-64 bg-white dark:bg-[#121212] text-gray-900 dark:text-white h-screen flex flex-col border-r border-gray-200 dark:border-gray-800">
@@ -50,19 +67,35 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
         <ul className="space-y-2">
           {modules.map((module) => {
             const Icon = module.icon;
+            const isActive = isModuleActive(module);
+            
+            const buttonContent = (
+              <>
+                <Icon size={20} />
+                <span className="text-sm font-medium">{module.name}</span>
+              </>
+            );
+
+            const buttonClasses = `w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+              isActive
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727] hover:text-gray-900 dark:hover:text-white'
+            }`;
+
             return (
               <li key={module.id}>
-                <button
-                  onClick={() => onModuleChange(module.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeModule === module.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727] hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Icon size={20} />
-                  <span className="text-sm font-medium">{module.name}</span>
-                </button>
+                {module.path ? (
+                  <Link to={module.path} className={buttonClasses}>
+                    {buttonContent}
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => handleModuleClick(module)}
+                    className={buttonClasses}
+                  >
+                    {buttonContent}
+                  </button>
+                )}
               </li>
             );
           })}

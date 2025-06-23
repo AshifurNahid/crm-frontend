@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -17,6 +16,7 @@ import ContactEdit from "./pages/ContactEdit";
 import CustomerProfileEdit from "./pages/CustomerProfileEdit";
 import InventoryEdit from "./pages/InventoryEdit";
 import NotFound from "./pages/NotFound";
+import TerritoryPage from "./pages/TerritoryPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +36,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Index />} />
+            <Route path="/territories" element={<TerritoryPage />} />
             <Route path="/territory/create" element={<TerritoryCreate />} />
             <Route path="/lead/create" element={<LeadCreate />} />
             <Route path="/opportunity/create" element={<OpportunityCreate />} />
