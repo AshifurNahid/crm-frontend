@@ -1,22 +1,51 @@
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, MoreHorizontal, Mail, Phone, Calendar, User, Edit, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useLeads, useDeleteLead } from '@/hooks/useLeads';
-import { Lead } from '@/services/leadService';
-import { Button } from '@/components/ui/button';
+import { Plus, Search, Filter, MoreHorizontal, Mail, Phone, Calendar, User } from 'lucide-react';
 
 const LeadManagement = () => {
-  const navigate = useNavigate();
-  const [pageNumber, setPageNumber] = useState(0);
-  const [sortField, setSortField] = useState('id');
-  const [direction, setDirection] = useState<'ASC' | 'DESC'>('ASC');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
+  const [leads] = useState([
+    {
+      id: 1,
+      name: 'Sarah Johnson',
+      company: 'TechStart Inc',
+      email: 'sarah@techstart.com',
+      phone: '+1-555-0123',
+      status: 'New',
+      source: 'Website',
+      value: '$25,000',
+      assignedTo: 'John Smith',
+      lastContact: '2024-01-15',
+      stage: 'initial'
+    },
+    {
+      id: 2,
+      name: 'Michael Chen',
+      company: 'Global Solutions',
+      email: 'mchen@globalsol.com',
+      phone: '+1-555-0124',
+      status: 'Qualified',
+      source: 'Referral',
+      value: '$45,000',
+      assignedTo: 'Emily Davis',
+      lastContact: '2024-01-14',
+      stage: 'qualified'
+    },
+    {
+      id: 3,
+      name: 'Lisa Rodriguez',
+      company: 'Acme Corp',
+      email: 'lrodriguez@acme.com',
+      phone: '+1-555-0125',
+      status: 'Contacted',
+      source: 'Social Media',
+      value: '$12,000',
+      assignedTo: 'Mike Johnson',
+      lastContact: '2024-01-13',
+      stage: 'contacted'
+    }
+  ]);
 
-  const { data: leadsData, isLoading, error } = useLeads(pageNumber, 10, sortField, direction);
-  const deleteMutation = useDeleteLead();
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -29,41 +58,6 @@ const LeadManagement = () => {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const handleEdit = (leadId: number) => {
-    navigate(`/leads/${leadId}/edit`);
-  };
-
-  const handleDelete = async (leadId: number) => {
-    if (window.confirm('Are you sure you want to delete this lead?')) {
-      deleteMutation.mutate(leadId);
-    }
-  };
-
-  const filteredLeads = leadsData?.content?.filter((lead: Lead) => {
-    const matchesSearch = lead.leadName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.contactInfo.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || lead.leadStatus === statusFilter;
-    const matchesSource = !sourceFilter || lead.leadSource === sourceFilter;
-    
-    return matchesSearch && matchesStatus && matchesSource;
-  }) || [];
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading leads...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-red-600">Error loading leads. Please try again.</div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -71,10 +65,13 @@ const LeadManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
           <p className="text-gray-600 mt-1">Track and manage your sales leads</p>
         </div>
-        <Button onClick={() => navigate('/lead/create')}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Lead
-        </Button>
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+        >
+          <Plus size={20} />
+          <span>Add New Lead</span>
+        </button>
       </div>
 
       {/* Filters and Search */}
@@ -86,33 +83,23 @@ const LeadManagement = () => {
               <input
                 type="text"
                 placeholder="Search leads..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Status</option>
-              <option value="New">New</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Qualified">Qualified</option>
-              <option value="Converted">Converted</option>
-              <option value="Dropped">Dropped</option>
+            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>All Status</option>
+              <option>New</option>
+              <option>Contacted</option>
+              <option>Qualified</option>
+              <option>Converted</option>
+              <option>Dropped</option>
             </select>
-            <select 
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Sources</option>
-              <option value="Website">Website</option>
-              <option value="Referral">Referral</option>
-              <option value="Social Media">Social Media</option>
-              <option value="Email">Email</option>
+            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>All Sources</option>
+              <option>Website</option>
+              <option>Referral</option>
+              <option>Social Media</option>
+              <option>Email</option>
             </select>
           </div>
           <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -129,62 +116,54 @@ const LeadManagement = () => {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left py-3 px-6 font-medium text-gray-900">Lead Info</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-900">Source</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-900">Company</th>
                 <th className="text-left py-3 px-6 font-medium text-gray-900">Status</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-900">Rating</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-900">Owner</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-900">Territory</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-900">Source</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-900">Value</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-900">Assigned To</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-900">Last Contact</th>
                 <th className="text-left py-3 px-6 font-medium text-gray-900">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredLeads.map((lead: Lead) => (
+              {leads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50">
                   <td className="py-4 px-6">
                     <div>
-                      <p className="font-medium text-gray-900">{lead.leadName}</p>
+                      <p className="font-medium text-gray-900">{lead.name}</p>
                       <div className="flex items-center space-x-4 mt-1">
                         <span className="text-sm text-gray-500 flex items-center">
                           <Mail size={14} className="mr-1" />
-                          {lead.contactInfo.email}
+                          {lead.email}
                         </span>
                         <span className="text-sm text-gray-500 flex items-center">
                           <Phone size={14} className="mr-1" />
-                          {lead.contactInfo.phone}
+                          {lead.phone}
                         </span>
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-gray-900">{lead.leadSource}</td>
+                  <td className="py-4 px-6 text-gray-900">{lead.company}</td>
                   <td className="py-4 px-6">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.leadStatus)}`}>
-                      {lead.leadStatus}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.status)}`}>
+                      {lead.status}
                     </span>
                   </td>
-                  <td className="py-4 px-6 font-medium text-gray-900">{lead.leadRating}%</td>
+                  <td className="py-4 px-6 text-gray-900">{lead.source}</td>
+                  <td className="py-4 px-6 font-medium text-gray-900">{lead.value}</td>
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-2">
                       <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                         <User size={12} className="text-white" />
                       </div>
-                      <span className="text-sm text-gray-900">{lead.leadOwner}</span>
+                      <span className="text-sm text-gray-900">{lead.assignedTo}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-gray-900">{lead.territory}</td>
+                  <td className="py-4 px-6 text-gray-500">{lead.lastContact}</td>
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleEdit(lead.id!)}
-                        className="p-1 text-gray-400 hover:text-blue-600"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(lead.id!)}
-                        className="p-1 text-gray-400 hover:text-red-600"
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 size={16} />
+                      <button className="p-1 text-gray-400 hover:text-blue-600">
+                        <Mail size={16} />
                       </button>
                       <button className="p-1 text-gray-400 hover:text-green-600">
                         <Phone size={16} />
@@ -204,29 +183,54 @@ const LeadManagement = () => {
         </div>
       </div>
 
-      {/* Pagination */}
-      {leadsData && leadsData.totalPages > 1 && (
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-700">
-            Showing {leadsData.number * leadsData.size + 1} to {Math.min((leadsData.number + 1) * leadsData.size, leadsData.totalElements)} of {leadsData.totalElements} results
-          </p>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPageNumber(pageNumber - 1)}
-              disabled={pageNumber === 0}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPageNumber(pageNumber + 1)}
-              disabled={pageNumber >= leadsData.totalPages - 1}
-            >
-              Next
-            </Button>
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Lead</h3>
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input type="tel" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source</label>
+                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option>Website</option>
+                  <option>Referral</option>
+                  <option>Social Media</option>
+                  <option>Email</option>
+                  <option>Cold Call</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Add Lead
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

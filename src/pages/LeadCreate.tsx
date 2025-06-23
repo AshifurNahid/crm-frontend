@@ -4,21 +4,21 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { useCreateLead } from '@/hooks/useLeads';
+import { toast } from '@/hooks/use-toast';
 
 const leadSchema = z.object({
   leadName: z.string().min(1, 'Lead name is required'),
   leadSource: z.string().min(1, 'Lead source is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
   email: z.string().email('Valid email is required'),
-  leadStatus: z.enum(['New', 'Contacted', 'Qualified', 'Converted', 'Dropped']),
+  leadStatus: z.enum(['New', 'Contacted', 'Qualified', 'Converted']),
   leadOwner: z.string().min(1, 'Lead owner is required'),
   territory: z.string().min(1, 'Territory is required'),
   leadRating: z.number().min(0).max(100),
@@ -27,8 +27,7 @@ const leadSchema = z.object({
 type LeadFormData = z.infer<typeof leadSchema>;
 
 const LeadCreate = () => {
-  const navigate = useNavigate();
-  const createMutation = useCreateLead();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [leadRating, setLeadRating] = useState([50]);
   
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<LeadFormData>({
@@ -53,24 +52,31 @@ const LeadCreate = () => {
   ];
 
   const onSubmit = async (data: LeadFormData) => {
-    const newLead = {
-      leadName: data.leadName,
-      leadSource: data.leadSource,
-      contactInfo: {
-        phone: data.phone,
-        email: data.email,
-      },
-      leadStatus: data.leadStatus,
-      leadOwner: data.leadOwner,
-      territory: data.territory,
-      leadRating: leadRating[0],
-    };
-
-    createMutation.mutate(newLead, {
-      onSuccess: () => {
-        navigate('/');
-      },
-    });
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/v1/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, leadRating: leadRating[0] }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Lead created successfully",
+        });
+      } else {
+        throw new Error('Failed to create lead');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create lead. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -154,7 +160,7 @@ const LeadCreate = () => {
 
                 <div className="space-y-2">
                   <Label className="text-gray-700 dark:text-gray-300">Lead Status</Label>
-                  <Select onValueChange={(value) => setValue('leadStatus', value as any)}>
+                  <Select onValueChange={(value) => setValue('leadStatus', value as 'New' | 'Contacted' | 'Qualified' | 'Converted')}>
                     <SelectTrigger className="dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -163,7 +169,6 @@ const LeadCreate = () => {
                       <SelectItem value="Contacted" className="dark:text-white">Contacted</SelectItem>
                       <SelectItem value="Qualified" className="dark:text-white">Qualified</SelectItem>
                       <SelectItem value="Converted" className="dark:text-white">Converted</SelectItem>
-                      <SelectItem value="Dropped" className="dark:text-white">Dropped</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.leadStatus && (
@@ -179,7 +184,7 @@ const LeadCreate = () => {
                     </SelectTrigger>
                     <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
                       {mockSalespersons.map((person) => (
-                        <SelectItem key={person.id} value={person.name} className="dark:text-white">
+                        <SelectItem key={person.id} value={person.id} className="dark:text-white">
                           {person.name}
                         </SelectItem>
                       ))}
@@ -198,7 +203,7 @@ const LeadCreate = () => {
                     </SelectTrigger>
                     <SelectContent className="dark:bg-gray-800 dark:border-gray-600">
                       {mockTerritories.map((territory) => (
-                        <SelectItem key={territory.id} value={territory.name} className="dark:text-white">
+                        <SelectItem key={territory.id} value={territory.id} className="dark:text-white">
                           {territory.name}
                         </SelectItem>
                       ))}
@@ -228,9 +233,9 @@ const LeadCreate = () => {
                 <Link to="/">
                   <Button variant="outline">Cancel</Button>
                 </Link>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={isSubmitting}>
                   <Save className="w-4 h-4 mr-2" />
-                  {createMutation.isPending ? 'Creating...' : 'Create Lead'}
+                  {isSubmitting ? 'Creating...' : 'Create Lead'}
                 </Button>
               </div>
             </form>
