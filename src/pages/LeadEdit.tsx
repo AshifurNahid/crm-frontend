@@ -4,14 +4,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { useCreateLead } from '@/hooks/useLeads';
+import { useLead, useUpdateLead } from '@/hooks/useLeads';
 
 const leadSchema = z.object({
   leadName: z.string().min(1, 'Lead name is required'),
@@ -26,17 +26,35 @@ const leadSchema = z.object({
 
 type LeadFormData = z.infer<typeof leadSchema>;
 
-const LeadCreate = () => {
+const LeadEdit = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const createMutation = useCreateLead();
+  const leadId = parseInt(id || '0');
+  
+  const { data: lead, isLoading } = useLead(leadId);
+  const updateMutation = useUpdateLead();
+  
   const [leadRating, setLeadRating] = useState([50]);
   
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<LeadFormData>({
+  const { register, handleSubmit, setValue, formState: { errors }, reset } = useForm<LeadFormData>({
     resolver: zodResolver(leadSchema),
-    defaultValues: {
-      leadRating: 50,
-    },
   });
+
+  React.useEffect(() => {
+    if (lead) {
+      reset({
+        leadName: lead.leadName,
+        leadSource: lead.leadSource,
+        phone: lead.contactInfo.phone,
+        email: lead.contactInfo.email,
+        leadStatus: lead.leadStatus as any,
+        leadOwner: lead.leadOwner,
+        territory: lead.territory,
+        leadRating: lead.leadRating,
+      });
+      setLeadRating([lead.leadRating]);
+    }
+  }, [lead, reset]);
 
   const leadSources = ['Website', 'Referral', 'Ad Campaign', 'Cold Call', 'Social Media', 'Trade Show'];
   const mockSalespersons = [
@@ -53,7 +71,7 @@ const LeadCreate = () => {
   ];
 
   const onSubmit = async (data: LeadFormData) => {
-    const newLead = {
+    const updatedLead = {
       leadName: data.leadName,
       leadSource: data.leadSource,
       contactInfo: {
@@ -66,12 +84,24 @@ const LeadCreate = () => {
       leadRating: leadRating[0],
     };
 
-    createMutation.mutate(newLead, {
+    updateMutation.mutate({ id: leadId, lead: updatedLead }, {
       onSuccess: () => {
         navigate('/');
       },
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg">Loading lead...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
@@ -83,7 +113,7 @@ const LeadCreate = () => {
               Back
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Lead</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Lead</h1>
         </div>
 
         <Card className="bg-white dark:bg-[#1f1f1f] border-gray-200 dark:border-gray-700">
@@ -228,9 +258,9 @@ const LeadCreate = () => {
                 <Link to="/">
                   <Button variant="outline">Cancel</Button>
                 </Link>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={updateMutation.isPending}>
                   <Save className="w-4 h-4 mr-2" />
-                  {createMutation.isPending ? 'Creating...' : 'Create Lead'}
+                  {updateMutation.isPending ? 'Updating...' : 'Update Lead'}
                 </Button>
               </div>
             </form>
@@ -241,4 +271,4 @@ const LeadCreate = () => {
   );
 };
 
-export default LeadCreate;
+export default LeadEdit;
