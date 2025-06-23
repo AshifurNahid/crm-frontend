@@ -7,7 +7,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
-import TerritoryPage from "./pages/TerritoryPage";
 import TerritoryCreate from "./pages/TerritoryCreate";
 import LeadCreate from "./pages/LeadCreate";
 import LeadEdit from "./pages/LeadEdit";
