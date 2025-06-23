@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   BarChart3, 
   Users, 
@@ -24,20 +25,29 @@ interface SidebarProps {
 
 const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   
   const modules = [
-    { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
-    { id: 'campaigns', name: 'Campaigns', icon: Target },
-    { id: 'territories', name: 'Territories', icon: Map },
-    { id: 'customer-groups', name: 'Customer Groups', icon: Tag },
-    { id: 'leads', name: 'Lead Management', icon: Search },
-    { id: 'opportunities', name: 'Opportunities', icon: TrendingUp },
-    { id: 'customers', name: 'Customer Profile', icon: Users },
-    { id: 'salespersons', name: 'Salespersons', icon: UserCheck },
-    { id: 'contacts', name: 'Contact Directory', icon: Phone },
-    { id: 'inventory', name: 'Inventory', icon: Package },
-    { id: 'sales', name: 'Sales Management', icon: User },
+    { id: 'dashboard', name: 'Dashboard', icon: BarChart3, route: null },
+    { id: 'campaigns', name: 'Campaigns', icon: Target, route: null },
+    { id: 'territories', name: 'Territories', icon: Map, route: '/territories' },
+    { id: 'customer-groups', name: 'Customer Groups', icon: Tag, route: null },
+    { id: 'leads', name: 'Lead Management', icon: Search, route: null },
+    { id: 'opportunities', name: 'Opportunities', icon: TrendingUp, route: null },
+    { id: 'customers', name: 'Customer Profile', icon: Users, route: null },
+    { id: 'salespersons', name: 'Salespersons', icon: UserCheck, route: null },
+    { id: 'contacts', name: 'Contact Directory', icon: Phone, route: null },
+    { id: 'inventory', name: 'Inventory', icon: Package, route: null },
+    { id: 'sales', name: 'Sales Management', icon: User, route: null },
   ];
+
+  const handleModuleClick = (module: any) => {
+    if (module.route) {
+      navigate(module.route);
+    } else {
+      onModuleChange(module.id);
+    }
+  };
 
   return (
     <div className="w-64 bg-white dark:bg-[#121212] text-gray-900 dark:text-white h-screen flex flex-col border-r border-gray-200 dark:border-gray-800">
@@ -53,7 +63,7 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
             return (
               <li key={module.id}>
                 <button
-                  onClick={() => onModuleChange(module.id)}
+                  onClick={() => handleModuleClick(module)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                     activeModule === module.id
                       ? 'bg-blue-600 text-white'
