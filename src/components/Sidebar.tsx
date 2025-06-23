@@ -30,7 +30,7 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
   const modules = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3, route: null },
     { id: 'campaigns', name: 'Campaigns', icon: Target, route: null },
-    { id: 'territories', name: 'Territories', icon: Map, route: '/territories' },
+    { id: 'territories', name: 'Territories', icon: Map, route: null },
     { id: 'customer-groups', name: 'Customer Groups', icon: Tag, route: null },
     { id: 'leads', name: 'Lead Management', icon: Search, route: null },
     { id: 'opportunities', name: 'Opportunities', icon: TrendingUp, route: null },

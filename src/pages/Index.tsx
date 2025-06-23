@@ -9,6 +9,7 @@ import CampaignManagement from '../components/CampaignManagement';
 import SalespersonManagement from '../components/SalespersonManagement';
 import ContactDirectory from '../components/ContactDirectory';
 import InventoryManagement from '../components/InventoryManagement';
+import TerritoryManagement from '../components/TerritoryManagement';
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -25,6 +26,8 @@ const Index = () => {
         return <CustomerManagement />;
       case 'campaigns':
         return <CampaignManagement />;
+      case 'territories':
+        return <TerritoryManagement />;
       case 'salespersons':
         return <SalespersonManagement />;
       case 'contacts':

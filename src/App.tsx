@@ -8,7 +8,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
 import TerritoryCreate from "./pages/TerritoryCreate";
-import TerritoryPage from "./pages/TerritoryPage";
 import LeadCreate from "./pages/LeadCreate";
 import OpportunityCreate from "./pages/OpportunityCreate";
 import CustomerGroupCreate from "./pages/CustomerGroupCreate";
@@ -37,7 +36,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/territories" element={<TerritoryPage />} />
             <Route path="/territory/create" element={<TerritoryCreate />} />
             <Route path="/lead/create" element={<LeadCreate />} />
             <Route path="/opportunity/create" element={<OpportunityCreate />} />
