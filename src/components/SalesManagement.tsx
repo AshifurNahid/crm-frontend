@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,14 +10,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import DeleteConfirmationDialog from './DeleteConfirmationDialog';
 
 const SalesManagement = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Mock data for demonstration
-  const mockOrders = [
+  const [mockOrders, setMockOrders] = useState([
     {
       id: 'SO-001',
       customerId: 'CUST-001',
@@ -46,9 +51,9 @@ const SalesManagement = () => {
       totalAmount: 22100.00,
       deliveryDate: '2024-01-27'
     }
-  ];
+  ]);
 
-  const mockInvoices = [
+  const [mockInvoices, setMockInvoices] = useState([
     {
       id: 'INV-001',
       orderId: 'SO-001',
@@ -67,9 +72,9 @@ const SalesManagement = () => {
       status: 'Sent',
       paymentStatus: 'Partial'
     }
-  ];
+  ]);
 
-  const mockDeliveryNotes = [
+  const [mockDeliveryNotes, setMockDeliveryNotes] = useState([
     {
       id: 'DN-001',
       orderId: 'SO-001',
@@ -84,9 +89,9 @@ const SalesManagement = () => {
       itemsCount: 8,
       status: 'Shipped'
     }
-  ];
+  ]);
 
-  const mockPayments = [
+  const [mockPayments, setMockPayments] = useState([
     {
       id: 'PAY-001',
       invoiceId: 'INV-002',
@@ -103,7 +108,7 @@ const SalesManagement = () => {
       amount: 15250.00,
       status: 'Pending'
     }
-  ];
+  ]);
 
   const getStatusBadge = (status: string, type: 'order' | 'invoice' | 'delivery' | 'payment') => {
     const colorMap: { [key: string]: string } = {
@@ -133,8 +138,411 @@ const SalesManagement = () => {
     }).format(amount);
   };
 
+  const handleView = (item: any) => {
+    setSelectedItem(item);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEdit = (item: any) => {
+    setSelectedItem(item);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (item: any) => {
+    setSelectedItem(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedItem) return;
+    
+    setIsDeleting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Remove item from appropriate array
+    switch (activeTab) {
+      case 'orders':
+        setMockOrders(prev => prev.filter(order => order.id !== selectedItem.id));
+        break;
+      case 'invoices':
+        setMockInvoices(prev => prev.filter(invoice => invoice.id !== selectedItem.id));
+        break;
+      case 'delivery':
+        setMockDeliveryNotes(prev => prev.filter(note => note.id !== selectedItem.id));
+        break;
+      case 'payments':
+        setMockPayments(prev => prev.filter(payment => payment.id !== selectedItem.id));
+        break;
+    }
+    
+    toast.success(`${selectedItem.id} deleted successfully`);
+    setIsDeleting(false);
+    setIsDeleteDialogOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (!selectedItem) return;
+    
+    toast.success(`${selectedItem.id} updated successfully`);
+    setIsEditDialogOpen(false);
+    setSelectedItem(null);
+  };
+
   const handleAction = (action: string, item: any) => {
     toast.success(`${action} action performed on ${item.id || item}`);
+  };
+
+  const renderViewDialog = () => {
+    if (!selectedItem) return null;
+
+    return (
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>View {selectedItem.id}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {activeTab === 'orders' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Order ID</Label>
+                    <p className="font-medium">{selectedItem.id}</p>
+                  </div>
+                  <div>
+                    <Label>Customer</Label>
+                    <p className="font-medium">{selectedItem.customerName}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Order Date</Label>
+                    <p className="font-medium">{selectedItem.orderDate}</p>
+                  </div>
+                  <div>
+                    <Label>Delivery Date</Label>
+                    <p className="font-medium">{selectedItem.deliveryDate}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Status</Label>
+                    <Badge className={getStatusBadge(selectedItem.status, 'order')}>
+                      {selectedItem.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label>Total Amount</Label>
+                    <p className="font-medium text-lg">{formatCurrency(selectedItem.totalAmount)}</p>
+                  </div>
+                </div>
+              </>
+            )}
+            {activeTab === 'invoices' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Invoice ID</Label>
+                    <p className="font-medium">{selectedItem.id}</p>
+                  </div>
+                  <div>
+                    <Label>Order ID</Label>
+                    <p className="font-medium">{selectedItem.orderId}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Invoice Date</Label>
+                    <p className="font-medium">{selectedItem.invoiceDate}</p>
+                  </div>
+                  <div>
+                    <Label>Due Date</Label>
+                    <p className="font-medium">{selectedItem.dueDate}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Status</Label>
+                    <Badge className={getStatusBadge(selectedItem.status, 'invoice')}>
+                      {selectedItem.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label>Payment Status</Label>
+                    <Badge className={getStatusBadge(selectedItem.paymentStatus, 'invoice')}>
+                      {selectedItem.paymentStatus}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label>Total Amount</Label>
+                  <p className="font-medium text-lg">{formatCurrency(selectedItem.totalAmount)}</p>
+                </div>
+              </>
+            )}
+            {activeTab === 'delivery' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Delivery Note ID</Label>
+                    <p className="font-medium">{selectedItem.id}</p>
+                  </div>
+                  <div>
+                    <Label>Order ID</Label>
+                    <p className="font-medium">{selectedItem.orderId}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Delivery Date</Label>
+                    <p className="font-medium">{selectedItem.deliveryDate}</p>
+                  </div>
+                  <div>
+                    <Label>Items Count</Label>
+                    <p className="font-medium">{selectedItem.itemsCount} items</p>
+                  </div>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Badge className={getStatusBadge(selectedItem.status, 'delivery')}>
+                    {selectedItem.status}
+                  </Badge>
+                </div>
+              </>
+            )}
+            {activeTab === 'payments' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Payment ID</Label>
+                    <p className="font-medium">{selectedItem.id}</p>
+                  </div>
+                  <div>
+                    <Label>Invoice ID</Label>
+                    <p className="font-medium">{selectedItem.invoiceId}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Payment Date</Label>
+                    <p className="font-medium">{selectedItem.paymentDate}</p>
+                  </div>
+                  <div>
+                    <Label>Method</Label>
+                    <p className="font-medium">{selectedItem.method}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Amount</Label>
+                    <p className="font-medium text-lg">{formatCurrency(selectedItem.amount)}</p>
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Badge className={getStatusBadge(selectedItem.status, 'payment')}>
+                      {selectedItem.status}
+                    </Badge>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  const renderEditDialog = () => {
+    if (!selectedItem) return null;
+
+    return (
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit {selectedItem.id}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {activeTab === 'orders' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="customerName">Customer</Label>
+                    <Input id="customerName" defaultValue={selectedItem.customerName} />
+                  </div>
+                  <div>
+                    <Label htmlFor="orderDate">Order Date</Label>
+                    <Input type="date" id="orderDate" defaultValue={selectedItem.orderDate} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="deliveryDate">Delivery Date</Label>
+                    <Input type="date" id="deliveryDate" defaultValue={selectedItem.deliveryDate} />
+                  </div>
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select defaultValue={selectedItem.status}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Confirmed">Confirmed</SelectItem>
+                        <SelectItem value="Shipped">Shipped</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="totalAmount">Total Amount</Label>
+                  <Input type="number" id="totalAmount" defaultValue={selectedItem.totalAmount} />
+                </div>
+              </>
+            )}
+            {activeTab === 'invoices' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="orderId">Order ID</Label>
+                    <Input id="orderId" defaultValue={selectedItem.orderId} readOnly />
+                  </div>
+                  <div>
+                    <Label htmlFor="invoiceDate">Invoice Date</Label>
+                    <Input type="date" id="invoiceDate" defaultValue={selectedItem.invoiceDate} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dueDate">Due Date</Label>
+                    <Input type="date" id="dueDate" defaultValue={selectedItem.dueDate} />
+                  </div>
+                  <div>
+                    <Label htmlFor="totalAmount">Total Amount</Label>
+                    <Input type="number" id="totalAmount" defaultValue={selectedItem.totalAmount} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select defaultValue={selectedItem.status}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Draft">Draft</SelectItem>
+                        <SelectItem value="Sent">Sent</SelectItem>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="paymentStatus">Payment Status</Label>
+                    <Select defaultValue={selectedItem.paymentStatus}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Unpaid">Unpaid</SelectItem>
+                        <SelectItem value="Partial">Partial</SelectItem>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            )}
+            {activeTab === 'delivery' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="orderId">Order ID</Label>
+                    <Input id="orderId" defaultValue={selectedItem.orderId} readOnly />
+                  </div>
+                  <div>
+                    <Label htmlFor="deliveryDate">Delivery Date</Label>
+                    <Input type="date" id="deliveryDate" defaultValue={selectedItem.deliveryDate} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="itemsCount">Items Count</Label>
+                    <Input type="number" id="itemsCount" defaultValue={selectedItem.itemsCount} />
+                  </div>
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select defaultValue={selectedItem.status}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Prepared">Prepared</SelectItem>
+                        <SelectItem value="Shipped">Shipped</SelectItem>
+                        <SelectItem value="Delivered">Delivered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            )}
+            {activeTab === 'payments' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="invoiceId">Invoice ID</Label>
+                    <Input id="invoiceId" defaultValue={selectedItem.invoiceId} readOnly />
+                  </div>
+                  <div>
+                    <Label htmlFor="paymentDate">Payment Date</Label>
+                    <Input type="date" id="paymentDate" defaultValue={selectedItem.paymentDate} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="method">Method</Label>
+                    <Select defaultValue={selectedItem.method}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="Credit Card">Credit Card</SelectItem>
+                        <SelectItem value="Check">Check</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="amount">Amount</Label>
+                    <Input type="number" id="amount" defaultValue={selectedItem.amount} />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select defaultValue={selectedItem.status}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Failed">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveEdit}>Save Changes</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   const tabs = [
@@ -296,13 +704,13 @@ const SalesManagement = () => {
                         <TableCell>{formatCurrency(order.totalAmount)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('View', order)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleView(order)}>
                               <Eye size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Edit', order)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(order)}>
                               <Edit size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Delete', order)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(order)}>
                               <Trash2 size={16} />
                             </Button>
                           </div>
@@ -431,13 +839,13 @@ const SalesManagement = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('View', invoice)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleView(invoice)}>
                               <Eye size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Edit', invoice)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(invoice)}>
                               <Edit size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Delete', invoice)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(invoice)}>
                               <Trash2 size={16} />
                             </Button>
                           </div>
@@ -552,13 +960,13 @@ const SalesManagement = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('View', note)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleView(note)}>
                               <Eye size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Edit', note)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(note)}>
                               <Edit size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Delete', note)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(note)}>
                               <Trash2 size={16} />
                             </Button>
                           </div>
@@ -679,13 +1087,13 @@ const SalesManagement = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('View', payment)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleView(payment)}>
                               <Eye size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Edit', payment)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(payment)}>
                               <Edit size={16} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('Delete', payment)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(payment)}>
                               <Trash2 size={16} />
                             </Button>
                           </div>
@@ -738,6 +1146,26 @@ const SalesManagement = () => {
 
       {/* Tab Content */}
       {renderTabContent()}
+
+      {/* View Dialog */}
+      {renderViewDialog()}
+
+      {/* Edit Dialog */}
+      {renderEditDialog()}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setSelectedItem(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Item"
+        description={`Are you sure you want to delete this ${activeTab.slice(0, -1)}?`}
+        itemName={selectedItem?.id}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
