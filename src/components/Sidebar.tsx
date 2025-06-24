@@ -14,7 +14,8 @@ import {
   Search,
   UserCheck,
   Sun,
-  Moon
+  Moon,
+  ShoppingCart
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -38,7 +39,7 @@ const Sidebar = ({ activeModule, onModuleChange }: SidebarProps) => {
     { id: 'salespersons', name: 'Salespersons', icon: UserCheck, route: null },
     { id: 'contacts', name: 'Contact Directory', icon: Phone, route: null },
     { id: 'inventory', name: 'Inventory', icon: Package, route: null },
-    { id: 'sales', name: 'Sales Management', icon: User, route: null },
+    { id: 'sales', name: 'Sales Management', icon: ShoppingCart, route: null },
   ];
 
   const handleModuleClick = (module: any) => {
