@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
@@ -11,6 +10,7 @@ import ContactDirectory from '../components/ContactDirectory';
 import InventoryManagement from '../components/InventoryManagement';
 import TerritoryManagement from '../components/TerritoryManagement';
 import SalesManagement from '../components/SalesManagement';
+import CustomerGroupManagement from '../components/CustomerGroupManagement';
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -27,6 +27,8 @@ const Index = () => {
         return <CustomerManagement />;
       case 'campaigns':
         return <CampaignManagement />;
+      case 'customer-groups':
+        return <CustomerGroupManagement />;
       case 'territories':
         return <TerritoryManagement />;
       case 'salespersons':
