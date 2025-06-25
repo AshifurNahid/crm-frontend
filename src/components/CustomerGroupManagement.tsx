@@ -50,7 +50,7 @@ const mockCustomerGroups = [
   }
 ];
 
-const CustomerGroupManagement = () => {
+export const CustomerGroupManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -102,5 +102,4 @@ const CustomerGroupManagement = () => {
   );
 };
 
-export default CustomerGroupManagement;
 export default CustomerGroupManagement;

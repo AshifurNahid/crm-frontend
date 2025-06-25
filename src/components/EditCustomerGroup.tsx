@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/Input';
-import { Select } from '../components/ui/Select';
-import { Checkbox } from '../components/ui/Checkbox';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const EditCustomerGroup = () => {
   const { id } = useParams();
