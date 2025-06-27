@@ -175,7 +175,7 @@ const CampaignManagement = () => {
         direction: 'DESC',
         sortField: 'id',
       });
-      const res = await fetch(`https://crm-production-a10d.up.railway.app/api/v1/campaigns?${params}`);
+      const res = await fetch(`https://crm-production-747d.up.railway.app/api/v1/campaigns?${params}`);
       if (!res.ok) throw new Error('Failed to fetch campaigns');
       const json: ApiResponse<Page<Campaign>> = await res.json();
       setCampaigns(json.data.content);
@@ -192,7 +192,7 @@ const CampaignManagement = () => {
     setTerritoriesLoading(true);
     setTerritoriesError(null);
     try {
-      const res = await fetch('https://crm-production-a10d.up.railway.app/api/v1/territories');
+      const res = await fetch('https://crm-production-747d.up.railway.app/api/v1/territories');
       if (!res.ok) throw new Error('Failed to fetch territories');
       const json = await res.json();
       setTerritories(json.data.content);
@@ -230,7 +230,7 @@ const CampaignManagement = () => {
       let response;
       if (editingCampaign) {
         // Update (PATCH)
-        response = await fetch(`https://crm-production-a10d.up.railway.app/api/v1/campaigns/${editingCampaign.id}`, {
+        response = await fetch(`https://crm-production-747d.up.railway.app/api/v1/campaigns/${editingCampaign.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -241,7 +241,7 @@ const CampaignManagement = () => {
         });
       } else {
         // Create (POST)
-        response = await fetch('https://crm-production-a10d.up.railway.app/api/v1/campaigns', {
+        response = await fetch('https://crm-production-747d.up.railway.app/api/v1/campaigns', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -281,7 +281,7 @@ const CampaignManagement = () => {
   const handleDelete = async () => {
     if (!deleteCampaignId) return;
     try {
-      const response = await fetch(`https://crm-production-a10d.up.railway.app/api/v1/campaigns/${deleteCampaignId}`, {
+      const response = await fetch(`https://crm-production-747d.up.railway.app/api/v1/campaigns/${deleteCampaignId}`, {
         method: 'DELETE',
       });
       if (response.ok) {
