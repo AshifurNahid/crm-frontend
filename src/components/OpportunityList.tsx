@@ -135,10 +135,23 @@ const OpportunityList = () => {
       const apiUrl = import.meta.env.VITE_API_URL || '';
       // Fix: Use uppercase "DESC" for the direction parameter as Spring's Sort.Direction enum requires
       const response = await fetch(`${apiUrl}/api/v1/opportunities?page=${page}&size=${pageSize}&direction=DESC&sort=createdAt`);
-      const result: ApiResponse<PageResponse<OpportunityResponse>> = await response.json();
+      
+      // Check if the response is valid before trying to parse JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned an invalid response format. Expected JSON, but received something else.');
+      }
+      
+      let result: ApiResponse<PageResponse<OpportunityResponse>>;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error('Unable to parse server response. The server may be down or returning invalid data.');
+      }
       
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to fetch opportunities');
+        throw new Error(result.message || `Server error: ${response.status} ${response.statusText}`);
       }
       
       if (result.success && result.data && result.data.content) {
@@ -167,13 +180,27 @@ const OpportunityList = () => {
         const uniqueCustomers = [...new Set(transformedOpportunities.map(opp => opp.customer))];
         setOwners(uniqueOwners);
         setCustomers(uniqueCustomers);
+      } else {
+        // Handle empty or invalid data structure
+        setOpportunities([]);
+        setTotalPages(0);
+        setTotalElements(0);
+        setError('No opportunities found or data format is invalid.');
       }
     } catch (err) {
       console.error('Error fetching opportunities:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      
+      // Set empty data
+      setOpportunities([]);
+      setTotalPages(0);
+      setTotalElements(0);
+      
       toast({
-        title: "Error",
-        description: "Failed to load opportunities. Please try again.",
+        title: "Error Loading Data",
+        description: err instanceof Error 
+          ? err.message 
+          : "Failed to connect to the server. Please check your connection and try again.",
         variant: "destructive",
       });
     } finally {
@@ -398,19 +425,46 @@ const OpportunityList = () => {
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="py-8 text-center">
+            <div className="py-16 text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
               <p className="text-gray-500 dark:text-gray-400">Loading opportunities...</p>
             </div>
           ) : error ? (
-            <div className="py-8 text-center">
-              <p className="text-red-500">{error}</p>
+            <div className="py-16 text-center">
+              <div className="text-red-500 mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 className="text-xl font-medium mt-4">Connection Error</h3>
+              </div>
+              <p className="text-red-500 mb-6 max-w-md mx-auto">{error}</p>
               <Button 
                 onClick={fetchOpportunities} 
                 variant="outline" 
-                className="mt-4"
+                className="mt-2 border-blue-500 text-blue-500 hover:bg-blue-50"
               >
-                Try Again
+                Retry Connection
               </Button>
+            </div>
+          ) : filteredOpportunities.length === 0 ? (
+            <div className="py-16 text-center">
+              <div className="text-gray-400 mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                <h3 className="text-xl font-medium mt-4">No Opportunities Found</h3>
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
+                {searchTerm || stageFilter !== 'all' || ownerFilter !== 'all' || customerFilter !== 'all' ? 
+                  'No opportunities match your current filters. Try adjusting your search criteria.' : 
+                  'There are no opportunities available. Get started by creating your first opportunity.'}
+              </p>
+              <Link to="/opportunity/create">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Opportunity
+                </Button>
+              </Link>
             </div>
           ) : (
             <Table>
@@ -509,8 +563,8 @@ const OpportunityList = () => {
           )}
         </CardContent>
         
-        {/* Pagination Controls */}
-        {!isLoading && !error && totalPages > 0 && (
+        {/* Pagination Controls - only show when we have data */}
+        {!isLoading && !error && filteredOpportunities.length > 0 && totalPages > 0 && (
           <CardFooter className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">
               Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, totalElements)} of {totalElements} opportunities
