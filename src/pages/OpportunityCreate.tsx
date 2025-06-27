@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,9 +19,11 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const itemSchema = z.object({
+  itemId: z.string().optional(),
   itemName: z.string().min(1, 'Item name is required'),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   unitPrice: z.number().min(0, 'Unit price must be positive'),
+  quantityOnHand: z.number().optional(),
 });
 
 const opportunitySchema = z.object({
@@ -46,9 +47,14 @@ type OpportunityFormData = z.infer<typeof opportunitySchema>;
 
 const OpportunityCreate = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [items, setItems] = useState([{ itemName: '', quantity: 1, unitPrice: 0 }]);
+  const [items, setItems] = useState([{ itemId: '', itemName: '', quantity: 1, unitPrice: 0 }]);
   const [date, setDate] = useState<Date>();
   const [probability, setProbability] = useState([50]);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [salesPersons, setSalesPersons] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [availableItems, setAvailableItems] = useState<any[]>([]);
   
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
@@ -72,47 +78,61 @@ const OpportunityCreate = () => {
     }
   }, [totalValue, watchedEstimatedValue, setValue]);
 
-  const mockLeads = [
-    { id: '1', name: 'Acme Corp Lead', type: 'Enterprise' },
-    { id: '2', name: 'Tech Solutions Lead', type: 'SMB' },
-    { id: '3', name: 'Global Industries Lead', type: 'Enterprise' },
-    { id: '4', name: 'InnovaCorp Lead', type: 'Startup' },
-  ];
+  React.useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    // Fetch leads
+    fetch(`${apiUrl}/api/v1/leads`)
+      .then(res => res.json())
+      .then(data => {
+        if (data?.data?.content) {
+          setLeads(data.data.content);
+        }
+      })
+      .catch(err => console.error('Error fetching leads:', err));
 
-  const mockCustomers = [
-    { id: '1', name: 'MegaCorp', type: 'Enterprise' },
-    { id: '2', name: 'TechStart Inc', type: 'SMB' },
-    { id: '3', name: 'Global Solutions', type: 'Enterprise' },
-  ];
+    // Fetch customers
+    fetch(`${apiUrl}/api/v1/customers`)
+      .then(res => res.json())
+      .then(data => {
+        if (data?.data?.content) {
+          setCustomers(data.data.content);
+        }
+      })
+      .catch(err => console.error('Error fetching customers:', err));
 
-  const mockSalespersons = [
-    { id: '1', name: 'John Smith' },
-    { id: '2', name: 'Sarah Johnson' },
-    { id: '3', name: 'Michael Chen' },
-    { id: '4', name: 'Lisa Rodriguez' },
-    { id: '5', name: 'David Kim' },
-  ];
+    // Fetch sales persons
+    fetch(`${apiUrl}/api/v1/sales-person`)
+      .then(res => res.json())
+      .then(data => {
+        if (data?.data?.content) {
+          setSalesPersons(data.data.content);
+        }
+      })
+      .catch(err => console.error('Error fetching sales persons:', err));
 
-  const mockCampaigns = [
-    { id: '1', name: 'Q1 Sales Push' },
-    { id: '2', name: 'New Product Launch' },
-    { id: '3', name: 'Holiday Campaign' },
-    { id: '4', name: 'Digital Marketing Campaign' },
-  ];
+    // Fetch campaigns
+    fetch(`${apiUrl}/api/v1/campaigns`)
+      .then(res => res.json())
+      .then(data => {
+        if (data?.data?.content) {
+          setCampaigns(data.data.content);
+        }
+      })
+      .catch(err => console.error('Error fetching campaigns:', err));
 
-  const mockItems = [
-    'CRM Software License',
-    'Cloud Storage Plan',
-    'Technical Support',
-    'Training Services',
-    'Custom Integration',
-    'Mobile App Development',
-    'Database Migration',
-    'Security Audit'
-  ];
+    // Fetch items for dropdown
+    fetch(`${apiUrl}/api/v1/items`)
+      .then(res => res.json())
+      .then(data => {
+        if (data?.data?.content) {
+          setAvailableItems(data.data.content);
+        }
+      })
+      .catch(err => console.error('Error fetching items:', err));
+  }, []);
 
   const addItem = () => {
-    const newItems = [...items, { itemName: '', quantity: 1, unitPrice: 0 }];
+    const newItems = [...items, { itemId: '', itemName: '', quantity: 1, unitPrice: 0 }];
     setItems(newItems);
     setValue('items', newItems);
   };
@@ -132,28 +152,133 @@ const OpportunityCreate = () => {
     setValue('items', newItems);
   };
 
+  // Update the handleItemSelect function to be more robust
+  const handleItemSelect = (index: number, selectedItemId: string) => {
+    const foundItem = availableItems.find(it => it.id.toString() === selectedItemId);
+    if (!foundItem) return;
+    
+    // Log for debugging
+    console.log('Selected item:', foundItem);
+    
+    // Update all relevant fields at once to ensure consistency
+    const newItems = [...items];
+    newItems[index] = { 
+      ...newItems[index],
+      itemId: foundItem.id.toString(),
+      itemName: foundItem.itemName,
+      unitPrice: Number(foundItem.price) || 0
+    };
+    setItems(newItems);
+    setValue('items', newItems);
+  };
+
+  // Modify the form selection for leads/customers to ensure it matches the DTO
+  const handleOpportunityFromChange = (value: 'LEAD' | 'CUSTOMER') => {
+    setValue('opportunityFrom', value);
+    // Reset the lead selection when changing type
+    setValue('lead', '');
+  };
+
   const onSubmit = async (data: OpportunityFormData) => {
     setIsSubmitting(true);
+    
+    // Add validation to ensure date is selected
+    if (!date) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select a next contact date",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Extract the ID from the lead/customer selection (e.g., "lead-123" -> 123)
+    let leadId = null;
+    let customerId = null;
+    
+    if (data.opportunityFrom === 'LEAD' && data.lead) {
+      const leadMatch = data.lead.match(/lead-(\d+)/);
+      if (leadMatch && leadMatch[1]) {
+        leadId = Number(leadMatch[1]);
+      }
+    } else if (data.opportunityFrom === 'CUSTOMER' && data.lead) {
+      const customerMatch = data.lead.match(/customer-(\d+)/);
+      if (customerMatch && customerMatch[1]) {
+        customerId = Number(customerMatch[1]);
+      }
+    }
+    
+    // Format data to match OpportunityRequestDto structure exactly as expected by Spring Boot
+    const opportunityRequestDto = {
+      opportunityName: data.opportunityName,
+      leadId: leadId,
+      customerId: customerId,
+      opportunityFrom: data.opportunityFrom,
+      opportunityType: data.opportunityType,
+      opportunityStage: data.opportunityStage,
+      estimatedValue: data.estimatedValue,
+      currency: data.currency,
+      probabilityOfClosing: data.probability, 
+      nextContactDate: format(date, 'yyyy-MM-dd'),
+      nextContactBy: Number(data.nextContactBy.replace(/^nextContact-/, '')),
+      opportunityOwner: Number(data.opportunityOwner.replace(/^owner-/, '')),
+      salesCampaign: data.salesCampaign ? Number(data.salesCampaign) : null,
+      source: data.source || null,
+      items: data.items.map(item => ({
+        itemId: Number(item.itemId), // Send itemId instead of itemName
+        quantity: item.quantity
+        // unitPrice is not needed in the DTO
+      }))
+    };
+    
+    // Log for debugging
+    console.log('Extracted IDs:', { leadId, customerId });
+    console.log('Submitting opportunity:', opportunityRequestDto);
+    
     try {
-      const response = await fetch('/api/v1/opportunities', {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/v1/opportunities`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, totalValue }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(opportunityRequestDto),
+        credentials: 'include'
       });
       
-      if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: "Success",
-          description: `Sales Opportunity created successfully! ID: ${result.id || 'OP-' + Date.now()}`,
-        });
-      } else {
-        throw new Error('Failed to create opportunity');
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      let result;
+      try {
+        result = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        throw new Error('Invalid response from server');
       }
-    } catch (error) {
+      
+      if (!response.ok) {
+        throw new Error(result.message || `Server error: ${response.status}`);
+      }
+      
       toast({
         title: "Success",
-        description: `Sales Opportunity "${data.opportunityName}" created successfully! This is a demo - no actual API call was made.`,
+        description: result.message || "Opportunity created successfully!",
+      });
+      
+      // Clear form after successful submission
+      setItems([{ itemId: '', itemName: '', quantity: 1, unitPrice: 0 }]);
+      setDate(undefined);
+      setProbability([50]);
+      
+    } catch (error) {
+      console.error('Error creating opportunity:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create opportunity. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -206,7 +331,7 @@ const OpportunityCreate = () => {
                       <Label className="text-gray-700 dark:text-gray-300">Opportunity From *</Label>
                       <RadioGroup
                         defaultValue="LEAD"
-                        onValueChange={(value) => setValue('opportunityFrom', value as 'LEAD' | 'CUSTOMER')}
+                        onValueChange={(value) => handleOpportunityFromChange(value as 'LEAD' | 'CUSTOMER')}
                         className="flex space-x-6"
                       >
                         <div className="flex items-center space-x-2">
@@ -227,16 +352,28 @@ const OpportunityCreate = () => {
                           <SelectValue placeholder="Select lead or customer" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                          {mockLeads.map((lead) => (
-                            <SelectItem key={lead.id} value={lead.id} className="text-gray-900 dark:text-white">
-                              {lead.name} ({lead.type})
-                            </SelectItem>
-                          ))}
-                          {mockCustomers.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id} className="text-gray-900 dark:text-white">
-                              {customer.name} ({customer.type})
-                            </SelectItem>
-                          ))}
+                          {
+                            leads.map((lead) => (
+                              <SelectItem
+                                key={`lead-${lead.id}`}
+                                value={`lead-${lead.id}`}
+                                className="text-gray-900 dark:text-white"
+                              >
+                                {lead.leadName} ({lead.leadSource})
+                              </SelectItem>
+                            ))
+                          }
+                          {
+                            customers.map((customer) => (
+                              <SelectItem
+                                key={`customer-${customer.id}`}
+                                value={`customer-${customer.id}`}
+                                className="text-gray-900 dark:text-white"
+                              >
+                                {customer.name} ({customer.customerType})
+                              </SelectItem>
+                            ))
+                          }
                         </SelectContent>
                       </Select>
                       {errors.lead && (
@@ -351,9 +488,13 @@ const OpportunityCreate = () => {
                           <SelectValue placeholder="Select salesperson" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                          {mockSalespersons.map((person) => (
-                            <SelectItem key={person.id} value={person.id} className="text-gray-900 dark:text-white">
-                              {person.name}
+                          {salesPersons.map((person) => (
+                            <SelectItem
+                              key={`nextContact-${person.id}`}
+                              value={`nextContact-${person.id}`}
+                              className="text-gray-900 dark:text-white"
+                            >
+                              {person.firstName} {person.lastName}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -370,9 +511,13 @@ const OpportunityCreate = () => {
                           <SelectValue placeholder="Select owner" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                          {mockSalespersons.map((person) => (
-                            <SelectItem key={person.id} value={person.id} className="text-gray-900 dark:text-white">
-                              {person.name}
+                          {salesPersons.map((person) => (
+                            <SelectItem
+                              key={`owner-${person.id}`}
+                              value={`owner-${person.id}`}
+                              className="text-gray-900 dark:text-white"
+                            >
+                              {person.firstName} {person.lastName}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -389,10 +534,10 @@ const OpportunityCreate = () => {
                           <SelectValue placeholder="Select currency" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                          <SelectItem value="USD" className="text-gray-900 dark:text-white">USD - US Dollar</SelectItem>
-                          <SelectItem value="EUR" className="text-gray-900 dark:text-white">EUR - Euro</SelectItem>
-                          <SelectItem value="GBP" className="text-gray-900 dark:text-white">GBP - British Pound</SelectItem>
-                          <SelectItem value="JPY" className="text-gray-900 dark:text-white">JPY - Japanese Yen</SelectItem>
+                          <SelectItem key="currency-USD" value="USD" className="text-gray-900 dark:text-white">USD - US Dollar</SelectItem>
+                          <SelectItem key="currency-EUR" value="EUR" className="text-gray-900 dark:text-white">EUR - Euro</SelectItem>
+                          <SelectItem key="currency-GBP" value="GBP" className="text-gray-900 dark:text-white">GBP - British Pound</SelectItem>
+                          <SelectItem key="currency-JPY" value="JPY" className="text-gray-900 dark:text-white">JPY - Japanese Yen</SelectItem>
                         </SelectContent>
                       </Select>
                       {errors.currency && (
@@ -420,21 +565,31 @@ const OpportunityCreate = () => {
                     <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                       <div className="space-y-2 md:col-span-2">
                         <Label className="text-gray-700 dark:text-gray-300">Item Name *</Label>
-                        <Select 
-                          value={item.itemName} 
-                          onValueChange={(value) => updateItem(index, 'itemName', value)}
+                        <Select
+                          value={item.itemId}
+                          onValueChange={(value) => handleItemSelect(index, value)}
                         >
-                          <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-                            <SelectValue placeholder="Select or type item" />
+                          <SelectTrigger
+                            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                          >
+                            <SelectValue placeholder="Select or type item">
+                              {item.itemName || "Select item"}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                            {mockItems.map(mockItem => (
-                              <SelectItem key={mockItem} value={mockItem} className="text-gray-900 dark:text-white">
-                                {mockItem}
+                            {availableItems.map((available) => (
+                              <SelectItem
+                                key={available.id}
+                                value={available.id.toString()}
+                                className="text-gray-900 dark:text-white"
+                              >
+                                {available.itemName} (${available.price})
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        
+                     
                       </div>
                       <div className="space-y-2">
                         <Label className="text-gray-700 dark:text-gray-300">Quantity *</Label>
@@ -468,6 +623,11 @@ const OpportunityCreate = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
+                      </div>
+
+                      {/* Display the selected item's available stock */}
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Available: {availableItems.find(a => a.id.toString() === item.itemId)?.quantityOnHand ?? '--'}
                       </div>
                     </div>
                   ))}
@@ -519,9 +679,13 @@ const OpportunityCreate = () => {
                           <SelectValue placeholder="Select campaign (optional)" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                          {mockCampaigns.map((campaign) => (
-                            <SelectItem key={campaign.id} value={campaign.id} className="text-gray-900 dark:text-white">
-                              {campaign.name}
+                          {campaigns.map((campaign) => (
+                            <SelectItem
+                              key={`campaign-${campaign.id}`}
+                              value={campaign.id.toString()}
+                              className="text-gray-900 dark:text-white"
+                            >
+                              {campaign.campaignName}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -535,14 +699,14 @@ const OpportunityCreate = () => {
                           <SelectValue placeholder="Select source (optional)" />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                          <SelectItem value="referral" className="text-gray-900 dark:text-white">Referral</SelectItem>
-                          <SelectItem value="website" className="text-gray-900 dark:text-white">Website</SelectItem>
-                          <SelectItem value="event" className="text-gray-900 dark:text-white">Event</SelectItem>
-                          <SelectItem value="cold_call" className="text-gray-900 dark:text-white">Cold Call</SelectItem>
-                          <SelectItem value="marketing" className="text-gray-900 dark:text-white">Marketing Campaign</SelectItem>
-                          <SelectItem value="social_media" className="text-gray-900 dark:text-white">Social Media</SelectItem>
-                          <SelectItem value="partner" className="text-gray-900 dark:text-white">Partner</SelectItem>
-                          <SelectItem value="other" className="text-gray-900 dark:text-white">Other</SelectItem>
+                          <SelectItem key="source-referral" value="referral" className="text-gray-900 dark:text-white">Referral</SelectItem>
+                          <SelectItem key="source-website" value="website" className="text-gray-900 dark:text-white">Website</SelectItem>
+                          <SelectItem key="source-event" value="event" className="text-gray-900 dark:text-white">Event</SelectItem>
+                          <SelectItem key="source-cold_call" value="cold_call" className="text-gray-900 dark:text-white">Cold Call</SelectItem>
+                          <SelectItem key="source-marketing" value="marketing" className="text-gray-900 dark:text-white">Marketing Campaign</SelectItem>
+                          <SelectItem key="source-social_media" value="social_media" className="text-gray-900 dark:text-white">Social Media</SelectItem>
+                          <SelectItem key="source-partner" value="partner" className="text-gray-900 dark:text-white">Partner</SelectItem>
+                          <SelectItem key="source-other" value="other" className="text-gray-900 dark:text-white">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -556,9 +720,13 @@ const OpportunityCreate = () => {
           <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6 -mx-8 mt-8">
             <div className="max-w-5xl mx-auto flex justify-end space-x-4">
               <Link to="/">
-                <Button variant="outline">Cancel</Button>
+                <Button type="button" variant="outline">Cancel</Button>
               </Link>
-              <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <Save className="w-4 h-4 mr-2" />
                 {isSubmitting ? 'Creating...' : 'Create Opportunity'}
               </Button>
