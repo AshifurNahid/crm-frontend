@@ -132,9 +132,10 @@ const OpportunityList = () => {
     setError(null);
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '';
-      // Fix: Use uppercase "DESC" for the direction parameter as Spring's Sort.Direction enum requires
-      const response = await fetch(`${apiUrl}/api/v1/opportunities?page=${page}&size=${pageSize}&direction=DESC&sort=createdAt`);
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const endpoint = `${baseUrl}/api/v1/opportunities?page=${page}&size=${pageSize}&direction=DESC&sort=createdAt`;
+      
+      const response = await fetch(endpoint);
       
       // Check if the response is valid before trying to parse JSON
       const contentType = response.headers.get('content-type');
@@ -263,8 +264,10 @@ const OpportunityList = () => {
     
     setIsDeleting(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/v1/opportunities/${opportunityToDelete.id}`, {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const endpoint = `${baseUrl}/api/v1/opportunities/${opportunityToDelete.id}`;
+
+      const response = await fetch(endpoint, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
