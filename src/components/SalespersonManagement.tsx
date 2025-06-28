@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
 // API base URL
-const API_BASE_URL = 'http://localhost:8080/api/v1/sales-person';
+const API_BASE_URL = 'https://crm-production-747d.up.railway.app/api/v1/sales-person';
 
 // Types matching backend DTOs
 interface SalesPersonRequestDto {
