@@ -76,7 +76,6 @@ interface Page<T> {
   numberOfElements: number;
   empty: boolean;
 }
-
 const salespersonSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
