@@ -306,13 +306,21 @@ const InventoryManagement = () => {
                   <TableHead>Item Name</TableHead>
                   <TableHead>Quantity On Hand</TableHead>
                   <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Warehouse</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.length > 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <div className="flex flex-col items-center">
+                        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+                        <span className="text-gray-500 dark:text-gray-400">Loading inventory items...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredItems.length > 0 ? (
                   filteredItems.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.itemCode}</TableCell>
@@ -323,11 +331,6 @@ const InventoryManagement = () => {
                         </span>
                       </TableCell>
                       <TableCell>${item.price.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusBadgeVariant(item.status)}>
-                          {item.status}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-sm text-gray-600 dark:text-gray-400">
                         {item.warehouse}
                       </TableCell>
@@ -379,7 +382,7 @@ const InventoryManagement = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
                       No inventory items found matching your criteria.
                     </TableCell>
                   </TableRow>
