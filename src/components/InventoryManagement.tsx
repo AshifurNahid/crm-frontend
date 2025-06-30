@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { Plus, Search, Edit, Eye, Package, ArrowUpDown, Truck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Edit, Eye, Package, ArrowUpDown, Truck, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +12,7 @@ import AddItemForm from './AddItemForm';
 import AdjustStockForm from './AdjustStockForm';
 import CheckAvailabilityModal from './CheckAvailabilityModal';
 import StockTransferForm from './StockTransferForm';
+import DeleteConfirmationDialog from './DeleteConfirmationDialog'; // You may need to create this if not present
 
 type ItemStatus = 'Active' | 'Inactive';
 
@@ -33,102 +33,70 @@ const InventoryManagement = () => {
   const [isAdjustStockOpen, setIsAdjustStockOpen] = useState(false);
   const [isCheckAvailabilityOpen, setIsCheckAvailabilityOpen] = useState(false);
   const [isStockTransferOpen, setIsStockTransferOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const { toast } = useToast();
 
-  // Dummy inventory data
-  const mockInventoryItems: InventoryItem[] = [
-    {
-      id: '1',
-      itemCode: 'ITM001',
-      itemName: 'Wireless Bluetooth Headphones',
-      quantityOnHand: 150,
-      price: 99.99,
-      status: 'Active',
-      warehouse: 'Main Warehouse'
-    },
-    {
-      id: '2',
-      itemCode: 'ITM002',
-      itemName: 'USB-C Cable 6ft',
-      quantityOnHand: 500,
-      price: 12.99,
-      status: 'Active',
-      warehouse: 'Main Warehouse'
-    },
-    {
-      id: '3',
-      itemCode: 'ITM003',
-      itemName: 'Laptop Stand Adjustable',
-      quantityOnHand: 75,
-      price: 45.50,
-      status: 'Active',
-      warehouse: 'Secondary Warehouse'
-    },
-    {
-      id: '4',
-      itemCode: 'ITM004',
-      itemName: 'Wireless Mouse',
-      quantityOnHand: 200,
-      price: 29.99,
-      status: 'Active',
-      warehouse: 'Main Warehouse'
-    },
-    {
-      id: '5',
-      itemCode: 'ITM005',
-      itemName: 'Mechanical Keyboard',
-      quantityOnHand: 50,
-      price: 129.99,
-      status: 'Active',
-      warehouse: 'Main Warehouse'
-    },
-    {
-      id: '6',
-      itemCode: 'ITM006',
-      itemName: 'Desk Lamp LED',
-      quantityOnHand: 0,
-      price: 34.99,
-      status: 'Inactive',
-      warehouse: 'Main Warehouse'
-    },
-    {
-      id: '7',
-      itemCode: 'ITM007',
-      itemName: 'Phone Charger Wireless',
-      quantityOnHand: 120,
-      price: 24.99,
-      status: 'Active',
-      warehouse: 'Secondary Warehouse'
-    },
-    {
-      id: '8',
-      itemCode: 'ITM008',
-      itemName: 'Monitor 24 inch 4K',
-      quantityOnHand: 25,
-      price: 299.99,
-      status: 'Active',
-      warehouse: 'Main Warehouse'
-    },
-    {
-      id: '9',
-      itemCode: 'ITM009',
-      itemName: 'External Hard Drive 1TB',
-      quantityOnHand: 80,
-      price: 89.99,
-      status: 'Active',
-      warehouse: 'Secondary Warehouse'
-    },
-    {
-      id: '10',
-      itemCode: 'ITM010',
-      itemName: 'Gaming Chair Ergonomic',
-      quantityOnHand: 15,
-      price: 249.99,
-      status: 'Inactive',
-      warehouse: 'Main Warehouse'
-    }
-  ];
+  // Fetch items from API (paginated)
+  useEffect(() => {
+    const fetchItems = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL || '';
+        const endpoint = `${baseUrl}/api/v1/items?pageNumber=${page}&pageSize=${pageSize}&direction=ASC&sortField=itemName`;
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.message || `Failed to fetch items: ${response.statusText}`);
+        }
+        // Handle paginated response
+        if (result.success && result.data && Array.isArray(result.data.content)) {
+          setItems(result.data.content.map((item: any) => ({
+            id: item.id?.toString(),
+            itemCode: item.itemCode,
+            itemName: item.itemName,
+            quantityOnHand: Number(item.quantityOnHand),
+            price: Number(item.price),
+            status: Number(item.quantityOnHand) > 0 ? 'Active' : 'Inactive',
+            warehouse: 'Main Warehouse'
+          })));
+          setTotalPages(result.data.totalPages);
+          setTotalElements(result.data.totalElements);
+        } else {
+          setItems([]);
+          setTotalPages(0);
+          setTotalElements(0);
+          setError('No items found or data format is invalid.');
+        }
+      } catch (error) {
+        setItems([]);
+        setTotalPages(0);
+        setTotalElements(0);
+        setError(error instanceof Error ? error.message : "Failed to fetch items");
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to fetch items",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [page, pageSize, toast]);
 
   const getStatusBadgeVariant = (status: ItemStatus) => {
     return status === 'Active' 
@@ -142,7 +110,7 @@ const InventoryManagement = () => {
     return 'text-green-600 dark:text-green-400';
   };
 
-  const filteredItems = mockInventoryItems.filter(item => {
+  const filteredItems = items.filter(item => {
     const matchesSearch = searchTerm === '' || 
       item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -173,6 +141,41 @@ const InventoryManagement = () => {
       title: "Edit Item",
       description: "Edit functionality will be implemented soon.",
     });
+  };
+
+  // Delete item handler
+  const handleDeleteClick = (item: InventoryItem) => {
+    setItemToDelete(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const endpoint = `${baseUrl}/api/v1/items/${itemToDelete.id}`;
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || `Failed to delete item: ${response.statusText}`);
+      }
+      setItems(prev => prev.filter(i => i.id !== itemToDelete.id));
+      toast({
+        title: "Success",
+        description: result.message || "Item deleted successfully",
+      });
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete item",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -230,7 +233,7 @@ const InventoryManagement = () => {
               <Package className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Items</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{mockInventoryItems.length}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{items.length}</p>
               </div>
             </div>
           </CardContent>
@@ -242,7 +245,7 @@ const InventoryManagement = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Items</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {mockInventoryItems.filter(item => item.status === 'Active').length}
+                  {items.filter(item => item.status === 'Active').length}
                 </p>
               </div>
             </div>
@@ -255,7 +258,7 @@ const InventoryManagement = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Low Stock</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {mockInventoryItems.filter(item => item.quantityOnHand < 20 && item.quantityOnHand > 0).length}
+                  {items.filter(item => item.quantityOnHand < 20 && item.quantityOnHand > 0).length}
                 </p>
               </div>
             </div>
@@ -268,7 +271,7 @@ const InventoryManagement = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Out of Stock</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {mockInventoryItems.filter(item => item.quantityOnHand === 0).length}
+                  {items.filter(item => item.quantityOnHand === 0).length}
                 </p>
               </div>
             </div>
@@ -296,69 +299,80 @@ const InventoryManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.itemCode}</TableCell>
-                    <TableCell>{item.itemName}</TableCell>
-                    <TableCell>
-                      <span className={getStockLevelColor(item.quantityOnHand)}>
-                        {item.quantityOnHand}
-                      </span>
-                    </TableCell>
-                    <TableCell>${item.price.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusBadgeVariant(item.status)}>
-                        {item.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600 dark:text-gray-400">
-                      {item.warehouse}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleCheckAvailability(item)}
-                          title="Check Availability"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditItem(item.id)}
-                          title="Edit Item"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleAdjustStock(item)}
-                          title="Adjust Stock"
-                        >
-                          <ArrowUpDown className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleStockTransfer(item)}
-                          title="Transfer Stock"
-                        >
-                          <Truck className="w-4 h-4" />
-                        </Button>
-                      </div>
+                {filteredItems.length > 0 ? (
+                  filteredItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.itemCode}</TableCell>
+                      <TableCell>{item.itemName}</TableCell>
+                      <TableCell>
+                        <span className={getStockLevelColor(item.quantityOnHand)}>
+                          {item.quantityOnHand}
+                        </span>
+                      </TableCell>
+                      <TableCell>${item.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusBadgeVariant(item.status)}>
+                          {item.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                        {item.warehouse}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleCheckAvailability(item)}
+                            title="Check Availability"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditItem(item.id)}
+                            title="Edit Item"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleAdjustStock(item)}
+                            title="Adjust Stock"
+                          >
+                            <ArrowUpDown className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleStockTransfer(item)}
+                            title="Transfer Stock"
+                          >
+                            <Truck className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteClick(item)}
+                            title="Delete Item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      No inventory items found matching your criteria.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
-            {filteredItems.length === 0 && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No inventory items found matching your criteria.
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -396,8 +410,18 @@ const InventoryManagement = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Item"
+        description="Are you sure you want to delete this item? This will permanently remove all associated data."
+        itemName={itemToDelete?.itemName}
+      />
     </div>
   );
 };
 
 export default InventoryManagement;
+

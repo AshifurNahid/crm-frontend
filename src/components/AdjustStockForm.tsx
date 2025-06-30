@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,10 +42,23 @@ const AdjustStockForm = ({ item, onClose }: AdjustStockFormProps) => {
 
   const onSubmit = async (data: AdjustStockFormData) => {
     try {
-      console.log('Adjusting stock for item:', item.itemCode, data);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const newQuantity = item.quantityOnHand + (data.quantityAdded || 0);
+      const payload = {
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        quantityOnHand: newQuantity,
+        price: undefined // You may want to keep the price unchanged or fetch it
+      };
+      const response = await fetch(`${baseUrl}/api/v1/items/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || `Failed to adjust stock: ${response.statusText}`);
+      }
       toast({
         title: "Success",
         description: `Stock adjusted successfully! New quantity: ${newQuantity}`,

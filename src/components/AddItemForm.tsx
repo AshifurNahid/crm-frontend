@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,8 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 const addItemSchema = z.object({
   itemCode: z.string().min(1, 'Item code is required'),
   itemName: z.string().min(1, 'Item name is required'),
-  quantityOnHand: z.number().min(0, 'Quantity must be non-negative'),
-  price: z.number().min(0, 'Price must be non-negative'),
+  quantityOnHand: z.coerce.number().min(0, 'Quantity must be non-negative'),
+  price: z.coerce.number().min(0, 'Price must be non-negative'),
   status: z.enum(['Active', 'Inactive']),
 });
 
@@ -22,9 +21,10 @@ type AddItemFormData = z.infer<typeof addItemSchema>;
 
 interface AddItemFormProps {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const AddItemForm = ({ onClose }: AddItemFormProps) => {
+const AddItemForm = ({ onClose, onSuccess }: AddItemFormProps) => {
   const { toast } = useToast();
   
   const form = useForm<AddItemFormData>({
@@ -40,17 +40,30 @@ const AddItemForm = ({ onClose }: AddItemFormProps) => {
 
   const onSubmit = async (data: AddItemFormData) => {
     try {
-      console.log('Adding new item:', data);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      // Only send fields required by backend DTO
+      const payload = {
+        itemCode: data.itemCode,
+        itemName: data.itemName,
+        quantityOnHand: data.quantityOnHand,
+        price: data.price
+      };
+      const response = await fetch(`${baseUrl}/api/v1/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || `Failed to create item: ${response.statusText}`);
+      }
       toast({
         title: "Success",
-        description: "Item added successfully!",
+        description: result.message || "Item created successfully",
       });
-      
       form.reset();
-      onClose();
+      if (onSuccess) onSuccess();
+      else onClose();
     } catch (error) {
       toast({
         title: "Error",
