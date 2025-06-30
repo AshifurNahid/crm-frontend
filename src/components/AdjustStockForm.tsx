@@ -25,9 +25,10 @@ interface AdjustStockFormProps {
     warehouse?: string;
   };
   onClose: () => void;
+  onSuccess?: () => void; // <-- Add this prop
 }
 
-const AdjustStockForm = ({ item, onClose }: AdjustStockFormProps) => {
+const AdjustStockForm = ({ item, onClose, onSuccess }: AdjustStockFormProps) => {
   const { toast } = useToast();
   
   const form = useForm<AdjustStockFormData>({
@@ -63,7 +64,7 @@ const AdjustStockForm = ({ item, onClose }: AdjustStockFormProps) => {
         title: "Success",
         description: `Stock adjusted successfully! New quantity: ${newQuantity}`,
       });
-      
+      if (onSuccess) onSuccess(); // <-- Call onSuccess after successful adjustment
       onClose();
     } catch (error) {
       toast({

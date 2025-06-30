@@ -13,6 +13,7 @@ import AdjustStockForm from './AdjustStockForm';
 import CheckAvailabilityModal from './CheckAvailabilityModal';
 import StockTransferForm from './StockTransferForm';
 import DeleteConfirmationDialog from './DeleteConfirmationDialog'; // You may need to create this if not present
+import { useNavigate } from 'react-router-dom';
 
 type ItemStatus = 'Active' | 'Inactive';
 
@@ -43,7 +44,9 @@ const InventoryManagement = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [refreshFlag, setRefreshFlag] = useState(0);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Fetch items from API (paginated)
   useEffect(() => {
@@ -96,7 +99,7 @@ const InventoryManagement = () => {
     };
 
     fetchItems();
-  }, [page, pageSize, toast]);
+  }, [page, pageSize, toast, refreshFlag]);
 
   const getStatusBadgeVariant = (status: ItemStatus) => {
     return status === 'Active' 
@@ -169,6 +172,7 @@ const InventoryManagement = () => {
       });
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);
+      triggerRefresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -177,6 +181,9 @@ const InventoryManagement = () => {
       });
     }
   };
+
+  // Call this after any operation to refresh the list
+  const triggerRefresh = () => setRefreshFlag(f => f + 1);
 
   return (
     <div className="space-y-6">
@@ -190,7 +197,13 @@ const InventoryManagement = () => {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
-            <AddItemForm onClose={() => setIsAddItemOpen(false)} />
+            <AddItemForm
+              onClose={() => setIsAddItemOpen(false)}
+              onSuccess={() => {
+                setIsAddItemOpen(false);
+                triggerRefresh();
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -381,9 +394,13 @@ const InventoryManagement = () => {
       <Dialog open={isAdjustStockOpen} onOpenChange={setIsAdjustStockOpen}>
         <DialogContent>
           {selectedItem && (
-            <AdjustStockForm 
+            <AdjustStockForm
               item={selectedItem}
-              onClose={() => setIsAdjustStockOpen(false)} 
+              onClose={() => setIsAdjustStockOpen(false)}
+              onSuccess={() => {
+                setIsAdjustStockOpen(false);
+                triggerRefresh();
+              }}
             />
           )}
         </DialogContent>
