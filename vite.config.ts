@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       '/api': {
         target: 'https://crm-production-747d.up.railway.app', // Make sure this matches your backend port
-       // target: 'http://localhost:8080', // Use localhost for local development
+        //target: 'http://localhost:8080', // Use localhost for local development
         changeOrigin: true,
         secure: false
       }
